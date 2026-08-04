@@ -1,0 +1,174 @@
+:root {
+  --bg: #F4F5F1;
+  --surface: #FFFFFF;
+  --ink: #232821;
+  --ink-soft: #5B6259;
+  --border: #DEDFD6;
+  --accent: #3E6B5C;       /* 主色：沉静的墨绿 */
+  --accent-soft: #E4EEE9;
+  --amber: #B9803B;        /* 烦人/收藏 */
+  --amber-soft: #F5E9D8;
+  --rose: #A85252;         /* 老熟人/警示 */
+  --rose-soft: #F3E4E4;
+  --blue: #3E5C7E;         /* 陌生人/新 */
+  --blue-soft: #E5EAF1;
+  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Inter", sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+}
+
+.app-shell {
+  max-width: 880px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+.app-title {
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0 0 4px;
+}
+
+.app-subtitle {
+  font-size: 13px;
+  color: var(--ink-soft);
+  margin: 0 0 24px;
+}
+
+.nav {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+
+.nav button {
+  background: none;
+  border: none;
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--ink-soft);
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+}
+
+.nav button.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+  font-weight: 600;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 12px;
+  padding: 3px 9px;
+  border-radius: 20px;
+  font-weight: 500;
+}
+
+.tag-stranger { background: var(--blue-soft); color: var(--blue); }
+.tag-acquaint { background: var(--accent-soft); color: var(--accent); }
+.tag-oldfriend { background: var(--rose-soft); color: var(--rose); }
+.tag-favorite { background: var(--amber-soft); color: var(--amber); }
+.tag-mastered { background: #E9E6DC; color: #8A7F63; }
+
+.word-term {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 8px 0 2px;
+}
+
+.word-meaning {
+  color: var(--ink-soft);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.sentence-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+.card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+button.btn {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  padding: 7px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink);
+}
+
+button.btn.primary {
+  background: var(--accent);
+  color: white;
+  border-color: var(--accent);
+}
+
+button.btn.active {
+  background: var(--amber-soft);
+  border-color: var(--amber);
+  color: var(--amber);
+}
+
+.controls-row {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  padding: 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.controls-row label {
+  font-size: 13px;
+  color: var(--ink-soft);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+select, input[type="text"], input[type="number"], textarea {
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  background: var(--surface);
+  color: var(--ink);
+  font-family: inherit;
+}
+
+input[type="range"] { width: 140px; }
+
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+th { color: var(--ink-soft); font-weight: 500; }
+
+.hint { font-size: 12px; color: var(--ink-soft); }
