@@ -58,6 +58,13 @@ export default function Quiz() {
     loadHistory();
   }
 
+  async function deleteLogEntry(id) {
+    const ok = window.confirm('Delete this quiz record? This cannot be undone.');
+    if (!ok) return;
+    await supabase.from('quiz_log').delete().eq('id', id);
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+  }
+
   return (
     <div>
       {!quizWords && (
@@ -68,7 +75,7 @@ export default function Quiz() {
               {[10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
-          <button className="btn primary" onClick={startQuiz}>从"朋友们"中抽题</button>
+          <button className="btn primary" onClick={startQuiz}>Draw from Friends</button>
         </div>
       )}
 
@@ -85,33 +92,34 @@ export default function Quiz() {
           ))}
           <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
             <label className="hint">
-              正确率（自动算出 {computedAccuracy}%，也可手动改）
+              Accuracy (auto-calculated: {computedAccuracy}%, or enter manually)
               <input type="number" min="0" max="100" placeholder={String(computedAccuracy)}
                 value={accuracy} onChange={(e) => setAccuracy(e.target.value)} style={{ width: 60, marginLeft: 6 }} />
             </label>
-            <button className="btn primary" onClick={submit}>提交结果</button>
+            <button className="btn primary" onClick={submit}>Submit results</button>
           </div>
         </div>
       )}
 
       {submitted && lastLog && (
         <div className="card">
-          <p>{lastLog.date}，本次 quiz 完成，正确率 {lastLog.accuracy}%，答错的词已回退到复习队列。</p>
-          <button className="btn" onClick={() => setQuizWords(null)}>再来一次</button>
+          <p>{lastLog.date} — quiz complete, accuracy {lastLog.accuracy}%. Missed words have been sent back to the review queue.</p>
+          <button className="btn" onClick={() => setQuizWords(null)}>Try again</button>
         </div>
       )}
 
       {history.length > 0 && (
         <div className="card">
-          <p className="hint" style={{ fontWeight: 700, marginBottom: 8 }}>历史记录</p>
+          <p className="hint" style={{ fontWeight: 700, marginBottom: 8 }}>History</p>
           <table>
-            <thead><tr><th>日期</th><th>词数</th><th>正确率</th></tr></thead>
+            <thead><tr><th>Date</th><th>Words</th><th>Accuracy</th><th></th></tr></thead>
             <tbody>
               {history.map((h) => (
                 <tr key={h.id}>
                   <td>{h.date}</td>
                   <td>{h.word_ids.length}</td>
                   <td>{h.accuracy}%</td>
+                  <td><button className="btn" onClick={() => deleteLogEntry(h.id)}>Delete</button></td>
                 </tr>
               ))}
             </tbody>

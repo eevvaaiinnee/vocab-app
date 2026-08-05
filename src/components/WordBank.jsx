@@ -4,11 +4,11 @@ import { getTag } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 
 const TAG_CLASS = {
-  '陌生人': 'tag-stranger',
-  '熟人': 'tag-acquaint',
-  '老熟人': 'tag-oldfriend',
-  '烦人': 'tag-favorite',
-  '朋友们': 'tag-mastered',
+  Stranger: 'tag-stranger',
+  OneNoodle: 'tag-onenoodle',
+  Acquaintance: 'tag-acquaintance',
+  GeNe: 'tag-gene',
+  Friend: 'tag-friend',
 };
 
 const SORT_FIELDS = {
@@ -32,7 +32,7 @@ export default function WordBank() {
   }
 
   async function remove(id) {
-    if (!confirm('确认删除这个词吗？例句会一并删除。')) return;
+    if (!confirm('Delete this word? Its example sentences will be deleted too.')) return;
     await supabase.from('words').delete().eq('id', id);
     load();
   }
@@ -43,8 +43,18 @@ export default function WordBank() {
     load();
   }
 
+  async function deleteTopic(t, e) {
+    e.stopPropagation();
+    const countInTopic = words.filter((w) => w.topic === t).length;
+    const ok = window.confirm(`Delete topic "${t}" and all ${countInTopic} word(s) in it? This cannot be undone.`);
+    if (!ok) return;
+    await supabase.from('words').delete().eq('topic', t);
+    setFilterTopics((prev) => prev.filter((x) => x !== t));
+    load();
+  }
+
   const topics = [...new Set(words.map((w) => w.topic))];
-  const allTags = ['陌生人', '熟人', '老熟人', '烦人', '朋友们'];
+  const allTags = ['Stranger', 'OneNoodle', 'Acquaintance', 'GeNe', 'Friend'];
 
   function toggleFilter(list, setList, val) {
     setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
@@ -75,48 +85,55 @@ export default function WordBank() {
 
   return (
     <div>
-      <div className="controls-row" style={{ flexDirection: 'column', alignItems: 'flex-start' }}>
-        <div style={{ marginBottom: 10 }}>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>主题筛选</div>
-          <div className="pill-group">
-            {topics.map((t) => {
-              const c = topicColor(t);
-              const sel = filterTopics.includes(t);
-              return (
-                <button key={t} className={`pill ${sel ? 'selected' : ''}`}
-                  style={sel ? { background: c.text, borderColor: c.text } : {}}
-                  onClick={() => toggleFilter(filterTopics, setFilterTopics, t)}>
+      <div className="params-panel">
+        <div className="params-row">
+          <div className="params-field" style={{ flex: 1 }}>
+            <span className="params-field-label">Filter by Topic</span>
+            <div className="pill-group">
+              {topics.map((t) => {
+                const c = topicColor(t);
+                const sel = filterTopics.includes(t);
+                return (
+                  <button key={t} className={`pill ${sel ? 'selected' : ''}`}
+                    style={sel ? { background: c.text, borderColor: c.text } : {}}
+                    onClick={() => toggleFilter(filterTopics, setFilterTopics, t)}>
+                    {t}
+                    <span className="pill-delete-x" onClick={(e) => deleteTopic(t, e)}>✕</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+        <div className="params-row">
+          <div className="params-field" style={{ flex: 1 }}>
+            <span className="params-field-label">Filter by Tag</span>
+            <div className="pill-group">
+              {allTags.map((t) => (
+                <button key={t} className={`pill ${filterTags.includes(t) ? 'selected' : ''}`}
+                  onClick={() => toggleFilter(filterTags, setFilterTags, t)}>
                   {t}
                 </button>
-              );
-            })}
+              ))}
+            </div>
           </div>
         </div>
-        <div>
-          <div style={{ fontSize: 16, fontWeight: 700, marginBottom: 8 }}>标签筛选</div>
-          <div className="pill-group">
-            {allTags.map((t) => (
-              <button key={t} className={`pill ${filterTags.includes(t) ? 'selected' : ''}`}
-                onClick={() => toggleFilter(filterTags, setFilterTags, t)}>
-                {t}
-              </button>
-            ))}
-          </div>
+        <div className="params-row">
+          <span className="hint">{filtered.length} word(s)</span>
         </div>
-        <span className="hint" style={{ marginTop: 10 }}>共 {filtered.length} 词</span>
       </div>
 
       <div className="card" style={{ padding: 0 }}>
         <table>
           <thead>
             <tr style={{ fontSize: 15, fontWeight: 700 }}>
-              <th className="sortable" onClick={() => toggleSort('term')}>单词 <span className="arrow">{arrow('term')}</span></th>
-              <th>中文意思</th>
-              <th>主题</th>
-              <th>标签</th>
-              <th className="sortable" onClick={() => toggleSort('added_date')}>加入日期 <span className="arrow">{arrow('added_date')}</span></th>
-              <th className="sortable" onClick={() => toggleSort('exposure_count')}>出现次数 <span className="arrow">{arrow('exposure_count')}</span></th>
-              <th>操作</th>
+              <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
+              <th>Meaning</th>
+              <th>Topic</th>
+              <th>Tag</th>
+              <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
+              <th className="sortable" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -133,9 +150,9 @@ export default function WordBank() {
                   <td>{w.exposure_count}</td>
                   <td>
                     <button className={`btn ${w.status === 'mastered' ? 'active' : ''}`} onClick={() => toggleMastered(w)}>
-                      {w.status === 'mastered' ? '↩ 撤销"朋友们"' : '移到"朋友们"'}
+                      {w.status === 'mastered' ? '↩ Unmark Friend' : 'Mark as Friend'}
                     </button>{' '}
-                    <button className="btn" onClick={() => remove(w.id)}>删除</button>
+                    <button className="btn" onClick={() => remove(w.id)}>Delete</button>
                   </td>
                 </tr>
               );

@@ -6,11 +6,11 @@ import AddWords from './components/AddWords';
 import Quiz from './components/Quiz';
 
 const TABS = [
-  { key: 'daily', en: 'Daily Practice', cn: '每日练习', Component: DailyPractice },
-  { key: 'checkin', en: 'Weekly Check-in', cn: '每周签到', Component: Checkin },
-  { key: 'bank', en: 'All Vocabulary', cn: '所有单词', Component: WordBank },
-  { key: 'add', en: 'Edit Vocabulary', cn: '编辑单词', Component: AddWords },
-  { key: 'quiz', en: 'Quiz', cn: '测试', Component: Quiz },
+  { key: 'daily', label: 'Daily Practice', Component: DailyPractice },
+  { key: 'checkin', label: 'Weekly Check-in', Component: Checkin },
+  { key: 'bank', label: 'All Vocabulary', Component: WordBank },
+  { key: 'add', label: 'Add Vocabulary', Component: AddWords },
+  { key: 'quiz', label: 'Quiz', Component: Quiz },
 ];
 
 export default function App() {
@@ -19,7 +19,7 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <h1 className="app-title">搓词机</h1>
+      <h1 className="app-title">VocabTwister</h1>
       <p className="app-subtitle">Nai's ACT / TOEFL vocabulary practice</p>
       <nav className="nav">
         {TABS.map((t) => (
@@ -28,8 +28,7 @@ export default function App() {
             className={active === t.key ? 'active' : ''}
             onClick={() => setActive(t.key)}
           >
-            <span className="tab-en">{t.en}</span>
-            <span className="tab-cn">{t.cn}</span>
+            {t.label}
           </button>
         ))}
       </nav>

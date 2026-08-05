@@ -17,11 +17,11 @@ const INTERVALS = {
 };
 
 export function getTag(word) {
-  if (word.status === 'mastered') return '朋友们';
-  if (word.is_favorite) return '烦人';
-  if (word.exposure_count <= 3) return '陌生人';
-  if (word.exposure_count <= 6) return '熟人';
-  return '老熟人';
+  if (word.status === 'mastered') return 'Friend';
+  if (word.is_favorite) return 'GeNe';
+  if (word.exposure_count <= 3) return 'Stranger';
+  if (word.exposure_count <= 6) return 'OneNoodle';
+  return 'Acquaintance';
 }
 
 // 计算某个词"这次被展示后"下一次的 next_due_date

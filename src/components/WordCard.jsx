@@ -2,11 +2,11 @@ import { getTag } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 
 const TAG_CLASS = {
-  '陌生人': 'tag-stranger',
-  '熟人': 'tag-acquaint',
-  '老熟人': 'tag-oldfriend',
-  '烦人': 'tag-favorite',
-  '朋友们': 'tag-mastered',
+  Stranger: 'tag-stranger',
+  OneNoodle: 'tag-onenoodle',
+  Acquaintance: 'tag-acquaintance',
+  GeNe: 'tag-gene',
+  Friend: 'tag-friend',
 };
 
 export default function WordCard({ word, sentences, onToggleFavorite, onMarkMastered }) {
@@ -29,10 +29,10 @@ export default function WordCard({ word, sentences, onToggleFavorite, onMarkMast
           className={`btn ${word.is_favorite ? 'active' : ''}`}
           onClick={() => onToggleFavorite(word)}
         >
-          {word.is_favorite ? '★ 已标记烦人' : '☆ 标记为烦人'}
+          {word.is_favorite ? '★ Unmark GeNe' : '☆ Mark as GeNe'}
         </button>
         <button className={`btn ${isMastered ? 'active' : ''}`} onClick={() => onMarkMastered(word)}>
-          {isMastered ? '✓ 已在"朋友们" · 点击撤销' : '移到"朋友们"'}
+          {isMastered ? '✓ Friend · click to undo' : 'Mark as Friends'}
         </button>
       </div>
     </div>

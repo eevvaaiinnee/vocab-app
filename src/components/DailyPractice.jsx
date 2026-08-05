@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { buildDailyPool, computeNextDue, estimateDaysLeft, getTag } from '../lib/scheduler';
+import { buildDailyPool, computeNextDue, estimateDaysLeft } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 import WordCard from './WordCard';
 
@@ -56,14 +56,13 @@ export default function DailyPractice() {
 
   async function generateToday() {
     if (sessionExists) {
-      const ok = window.confirm('Today\'s words have already been generated. Regenerate and replace them?');
+      const ok = window.confirm("Today's words have already been generated. Regenerate and replace them?");
       if (!ok) return;
     }
     const p = buildDailyPool(allWords, { count, newRatio: ratio, topics: selectedTopics });
     setPool(p);
     setCurrent(0);
 
-    // 记录曝光 + 更新调度
     for (const w of p) {
       const nextDue = computeNextDue(w);
       await supabase
@@ -82,9 +81,10 @@ export default function DailyPractice() {
     init();
   }
 
-  async function checkIn() {
-    await supabase.from('checkins').upsert({ date: todayStr(), success: true });
-    setCheckedInToday(true);
+  async function toggleCheckIn() {
+    const next = !checkedInToday;
+    await supabase.from('checkins').upsert({ date: todayStr(), success: next });
+    setCheckedInToday(next);
   }
 
   async function toggleFavorite(word) {
@@ -111,87 +111,120 @@ export default function DailyPractice() {
     setShowHistory(true);
   }
 
+  async function deleteHistoryEntry(id) {
+    const ok = window.confirm('Delete this session record? This cannot be undone.');
+    if (!ok) return;
+    await supabase.from('daily_sessions').delete().eq('id', id);
+    setHistory((prev) => prev.filter((h) => h.id !== id));
+  }
+
   const wordMap = useMemo(() => Object.fromEntries(allWords.map((w) => [w.id, w])), [allWords]);
   const activeWord = pool[current];
 
   return (
     <div>
-      <div className="controls-row">
-        <label>
-          Count
-          <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-            {[10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}
-          </select>
-        </label>
-        <div>
-          <label style={{ marginBottom: 6, display: 'block' }}>Topics (multi-select, none = all)</label>
-          <div className="pill-group">
-            {topics.map((t) => {
-              const c = topicColor(t);
-              const selected = selectedTopics.includes(t);
-              return (
-                <button
-                  key={t}
-                  className={`pill ${selected ? 'selected' : ''}`}
-                  style={selected ? { background: c.text, borderColor: c.text } : {}}
-                  onClick={() => toggleTopic(t)}
-                >
-                  {t}
-                </button>
-              );
-            })}
+      <div className="params-panel">
+        <div className="params-row">
+          <div className="params-field">
+            <span className="params-field-label">Count</span>
+            <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
+              {[10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}
+            </select>
+          </div>
+          <div className="params-field" style={{ flex: 1, minWidth: 220 }}>
+            <span className="params-field-label">Topics (multi-select, none = all)</span>
+            <div className="pill-group">
+              {topics.map((t) => {
+                const c = topicColor(t);
+                const selected = selectedTopics.includes(t);
+                return (
+                  <button
+                    key={t}
+                    className={`pill ${selected ? 'selected' : ''}`}
+                    style={selected ? { background: c.text, borderColor: c.text } : {}}
+                    onClick={() => toggleTopic(t)}
+                  >
+                    {t}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-        <label>
-          New word ratio {Math.round(ratio * 100)}%
-          <input type="range" min="0" max="1" step="0.1" value={ratio}
-            onChange={(e) => setRatio(Number(e.target.value))} />
-        </label>
-        <span className="hint">~{daysLeft} days left to cover all new words at this pace</span>
-        <button className="btn primary" onClick={generateToday}>
-          {sessionExists ? 'Regenerate' : 'Generate Today\'s Words'}
-        </button>
-        <button className="btn" onClick={loadHistory}>History</button>
+
+        <div className="params-row">
+          <div className="params-field" style={{ flex: 1, minWidth: 220 }}>
+            <span className="params-field-label">New word ratio · {Math.round(ratio * 100)}%</span>
+            <input type="range" className="slider-secondary" min="0" max="1" step="0.1" value={ratio}
+              onChange={(e) => setRatio(Number(e.target.value))} />
+          </div>
+          <div className="params-field">
+            <span className="params-field-label">Pace</span>
+            <div className="days-left-line">
+              Approximately <span className="days-left-badge">{daysLeft}</span> days left to cover all new words at this pace
+            </div>
+          </div>
+        </div>
+
+        <div className="params-row">
+          <div className="params-actions">
+            <button className="btn primary" onClick={generateToday}>
+              {sessionExists ? 'Regenerate' : "Generate Today's Words"}
+            </button>
+            <button className="btn" onClick={loadHistory}>History</button>
+          </div>
+        </div>
       </div>
 
       {showHistory && (
-        <div className="card">
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
-            <strong style={{ fontSize: 14 }}>Past sessions</strong>
-            <button className="btn" onClick={() => setShowHistory(false)}>Close</button>
-          </div>
-          {history.map((h) => (
-            <div key={h.date} style={{ marginBottom: 10 }}>
-              <div className="hint" style={{ fontWeight: 600, marginBottom: 4 }}>{h.date} · {h.word_ids.length} words</div>
-              <div style={{ fontSize: 13 }}>
-                {h.word_ids.map((id) => wordMap[id]?.term).filter(Boolean).join(', ')}
-              </div>
+        <div className="modal-overlay" onClick={() => setShowHistory(false)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <strong style={{ fontSize: 15 }}>Past sessions</strong>
+              <button className="modal-close" onClick={() => setShowHistory(false)}>✕</button>
             </div>
-          ))}
-          {!history.length && <p className="hint">No past sessions yet.</p>}
+            {history.map((h) => (
+              <div key={h.id} className="card" style={{ marginBottom: 10 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div>
+                    <div className="hint" style={{ fontWeight: 700, marginBottom: 4 }}>{h.date} · {h.word_ids.length} words</div>
+                    <div style={{ fontSize: 13 }}>
+                      {h.word_ids.map((id) => wordMap[id]?.term).filter(Boolean).join(', ')}
+                    </div>
+                  </div>
+                  <button className="btn" onClick={() => deleteHistoryEntry(h.id)}>Delete</button>
+                </div>
+              </div>
+            ))}
+            {!history.length && <p className="hint">No past sessions yet.</p>}
+          </div>
         </div>
       )}
 
       {pool.length > 0 && activeWord && (
         <div className="flip-layout">
           <div className="flip-index">
-            {pool.map((w, idx) => (
-              <div
-                key={w.id}
-                className={`flip-index-item ${idx === current ? 'active' : ''}`}
-                onClick={() => setCurrent(idx)}
-              >
-                <span>{idx + 1}. {w.term}</span>
-              </div>
-            ))}
+            <div className="flip-index-list">
+              {pool.map((w, idx) => (
+                <div
+                  key={w.id}
+                  className={`flip-index-item ${idx === current ? 'active' : ''}`}
+                  onClick={() => setCurrent(idx)}
+                >
+                  {idx + 1}. {w.term}
+                </div>
+              ))}
+            </div>
           </div>
           <div className="flip-main">
-            <WordCard
-              word={activeWord}
-              sentences={sentencesByWord[activeWord.id] || []}
-              onToggleFavorite={toggleFavorite}
-              onMarkMastered={markMastered}
-            />
+            <div key={activeWord.id} className="card-anim">
+              <WordCard
+                word={activeWord}
+                sentences={sentencesByWord[activeWord.id] || []}
+                onToggleFavorite={toggleFavorite}
+                onMarkMastered={markMastered}
+              />
+            </div>
             <div className="flip-nav">
               <button className="flip-arrow" disabled={current === 0} onClick={() => setCurrent((c) => c - 1)}>←</button>
               <span className="flip-counter">{current + 1} / {pool.length}</span>
@@ -202,12 +235,13 @@ export default function DailyPractice() {
       )}
 
       {pool.length > 0 && (
-        <div style={{ marginTop: 16 }}>
-          {!checkedInToday ? (
-            <button className="btn primary" onClick={checkIn}>Check in for today</button>
-          ) : (
-            <p className="hint">Checked in today ✓</p>
-          )}
+        <div className="checkin-cta-row">
+          <div className="checkin-cta-col">
+            <button className={`btn ${checkedInToday ? 'active' : 'primary'}`} onClick={toggleCheckIn}>
+              {checkedInToday ? '✓ Checked in — click to undo' : 'Check in for today'}
+            </button>
+          </div>
+          <div />
         </div>
       )}
     </div>
