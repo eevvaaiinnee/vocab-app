@@ -1,73 +1,56 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { getMonthWeeks } from '../lib/calendar';
 
-function getWeekRanges(dates) {
-  // 按 ISO 周分组，判断该周是否 >=5 天签到
-  const weeks = {};
-  dates.forEach((d) => {
-    const date = new Date(d);
-    const onejan = new Date(date.getFullYear(), 0, 1);
-    const week = Math.ceil((((date - onejan) / 86400000) + onejan.getDay() + 1) / 7);
-    const key = `${date.getFullYear()}-W${week}`;
-    weeks[key] = (weeks[key] || 0) + 1;
-  });
-  return weeks;
-}
+const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Checkin() {
-  const [checkins, setCheckins] = useState([]);
+  const [checkedDates, setCheckedDates] = useState(new Set());
+  const now = new Date(); // 始终用真实的"今天"，跨月自动更新
 
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const { data } = await supabase.from('checkins').select('*').eq('success', true).order('date');
-    setCheckins(data || []);
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
+    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
+    const { data } = await supabase
+      .from('checkins')
+      .select('date')
+      .eq('success', true)
+      .gte('date', monthStart)
+      .lt('date', nextMonthStart);
+    setCheckedDates(new Set((data || []).map((c) => c.date)));
   }
 
-  const dates = checkins.map((c) => c.date);
-  const weeks = getWeekRanges(dates);
-
-  // 最近12周简单展示
-  const today = new Date();
-  const days = [];
-  for (let i = 83; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
-  }
+  const weeks = getMonthWeeks(now.getFullYear(), now.getMonth());
+  const monthLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
   return (
     <div>
       <div className="card">
-        <p className="hint" style={{ marginBottom: 12 }}>最近12周签到情况（一周签到≥5天记为达标周）</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(14, 1fr)', gap: 4 }}>
-          {days.map((d) => (
-            <div key={d}
-              title={d}
-              style={{
-                aspectRatio: '1',
-                borderRadius: 4,
-                background: dates.includes(d) ? 'var(--accent)' : 'var(--border)',
-              }}
-            />
-          ))}
+        <h3 style={{ marginTop: 0, marginBottom: 16 }}>{monthLabel}</h3>
+        <div className="calendar-weekday-row">
+          {WEEKDAY_LABELS.map((d) => <span key={d}>{d}</span>)}
         </div>
-      </div>
-
-      <div className="card">
-        <p className="hint" style={{ marginBottom: 8 }}>按周统计</p>
-        <table>
-          <thead><tr><th>周</th><th>签到天数</th><th>是否达标</th></tr></thead>
-          <tbody>
-            {Object.entries(weeks).sort().reverse().slice(0, 12).map(([wk, cnt]) => (
-              <tr key={wk}>
-                <td>{wk}</td>
-                <td>{cnt} 天</td>
-                <td>{cnt >= 5 ? '✓ 达标' : '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {weeks.map((week, wi) => {
+          const realDays = week.filter(Boolean);
+          const metCount = realDays.filter((d) => checkedDates.has(d)).length;
+          const weekClass = metCount >= 5 ? 'week-met' : 'week-unmet';
+          return (
+            <div key={wi} className={`calendar-week ${weekClass}`}>
+              {week.map((d, di) => {
+                if (!d) return <div key={di} className="calendar-day empty" />;
+                const isChecked = checkedDates.has(d);
+                const dayNum = Number(d.slice(-2));
+                return (
+                  <div key={d} className={`calendar-day ${isChecked ? 'checked' : 'unchecked'}`}>
+                    {isChecked ? '✓' : dayNum}
+                  </div>
+                );
+              })}
+            </div>
+          );
+        })}
       </div>
     </div>
   );

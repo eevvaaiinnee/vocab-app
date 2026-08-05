@@ -60,7 +60,7 @@ export default function AddWords() {
       <div className="controls-row">
         <label>
           主题（本批词统一使用）
-          <input type="text" placeholder="例如：SAT高频词 / 生物学"
+          <input type="text" className="input-bold" placeholder="例如：SAT高频词 / 生物学"
             value={topic} onChange={(e) => setTopic(e.target.value)} />
         </label>
       </div>
@@ -68,17 +68,17 @@ export default function AddWords() {
       {entries.map((e, idx) => (
         <div className="card" key={idx}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <input type="text" placeholder="单词"
+            <input type="text" className="input-bold" placeholder="单词"
               style={{ fontSize: 18, fontWeight: 600, width: '60%' }}
               value={e.term} onChange={(ev) => updateEntry(idx, 'term', ev.target.value)} />
             {entries.length > 1 && (
               <button className="btn" onClick={() => removeEntry(idx)}>删除这条</button>
             )}
           </div>
-          <input type="text" placeholder="中文意思" style={{ width: '100%', margin: '10px 0' }}
+          <input type="text" className="input-bold" placeholder="中文意思" style={{ width: '100%', margin: '10px 0' }}
             value={e.chinese_meaning} onChange={(ev) => updateEntry(idx, 'chinese_meaning', ev.target.value)} />
           {e.sentences.map((s, sIdx) => (
-            <input key={sIdx} type="text" placeholder={`例句 ${sIdx + 1}`}
+            <input key={sIdx} type="text" className="input-bold" placeholder={`例句 ${sIdx + 1}`}
               style={{ width: '100%', marginBottom: 6 }}
               value={s} onChange={(ev) => updateSentence(idx, sIdx, ev.target.value)} />
           ))}

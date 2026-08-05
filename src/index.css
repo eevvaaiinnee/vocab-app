@@ -3,16 +3,23 @@
   --surface: #FFFFFF;
   --ink: #232821;
   --ink-soft: #5B6259;
+  --ink-faint: #9BA098;
   --border: #DEDFD6;
-  --accent: #3E6B5C;       /* 主色：沉静的墨绿 */
+  --border-strong: #B9BDB2;
+  --accent: #3E6B5C;
   --accent-soft: #E4EEE9;
-  --amber: #B9803B;        /* 烦人/收藏 */
+  --amber: #B9803B;
   --amber-soft: #F5E9D8;
-  --rose: #A85252;         /* 老熟人/警示 */
+  --rose: #A85252;
   --rose-soft: #F3E4E4;
-  --blue: #3E5C7E;         /* 陌生人/新 */
+  --blue: #3E5C7E;
   --blue-soft: #E5EAF1;
-  font-family: -apple-system, "PingFang SC", "Noto Sans SC", "Inter", sans-serif;
+  --green-week: #DCEEE3;
+  --green-week-text: #2F6B4A;
+  --red-week: #F5E2E0;
+  --red-week-text: #A85252;
+  --font-en: 'Inter', -apple-system, sans-serif;
+  --font-cn: 'Noto Sans SC', -apple-system, sans-serif;
 }
 
 * { box-sizing: border-box; }
@@ -21,27 +28,32 @@ body {
   margin: 0;
   background: var(--bg);
   color: var(--ink);
+  font-family: var(--font-en), var(--font-cn);
+  -webkit-font-smoothing: antialiased;
 }
 
 .app-shell {
-  max-width: 880px;
+  max-width: 960px;
   margin: 0 auto;
   padding: 32px 20px 80px;
 }
 
 .app-title {
-  font-size: 22px;
-  font-weight: 600;
+  font-size: 34px;
+  font-weight: 700;
   letter-spacing: -0.01em;
   margin: 0 0 4px;
+  font-family: var(--font-cn), var(--font-en);
 }
 
 .app-subtitle {
   font-size: 13px;
   color: var(--ink-soft);
   margin: 0 0 24px;
+  font-weight: 400;
 }
 
+/* ===== Nav ===== */
 .nav {
   display: flex;
   gap: 4px;
@@ -52,19 +64,31 @@ body {
 .nav button {
   background: none;
   border: none;
-  padding: 10px 14px;
-  font-size: 14px;
-  color: var(--ink-soft);
+  padding: 10px 16px 12px;
   cursor: pointer;
   border-bottom: 2px solid transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-.nav button.active {
-  color: var(--accent);
-  border-bottom-color: var(--accent);
-  font-weight: 600;
+.nav .tab-en {
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.nav .tab-cn {
+  font-size: 11px;
+  color: var(--ink-faint);
+  font-weight: 400;
 }
 
+.nav button.active { border-bottom-color: var(--accent); }
+.nav button.active .tab-en { color: var(--accent); font-weight: 700; }
+.nav button.active .tab-cn { color: var(--accent); opacity: 0.7; }
+
+/* ===== Cards ===== */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -78,7 +102,7 @@ body {
   font-size: 12px;
   padding: 3px 9px;
   border-radius: 20px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .tag-stranger { background: var(--blue-soft); color: var(--blue); }
@@ -87,10 +111,19 @@ body {
 .tag-favorite { background: var(--amber-soft); color: var(--amber); }
 .tag-mastered { background: #E9E6DC; color: #8A7F63; }
 
-.word-term {
-  font-size: 20px;
+.topic-pill {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 8px;
+  border-radius: 6px;
   font-weight: 600;
-  margin: 8px 0 2px;
+  margin-left: 6px;
+}
+
+.word-term {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 10px 0 2px;
 }
 
 .word-meaning {
@@ -103,7 +136,7 @@ body {
   margin: 0;
   padding-left: 18px;
   font-size: 14px;
-  line-height: 1.8;
+  line-height: 1.9;
   color: var(--ink);
 }
 
@@ -121,6 +154,7 @@ button.btn {
   font-size: 13px;
   cursor: pointer;
   color: var(--ink);
+  font-family: inherit;
 }
 
 button.btn.primary {
@@ -165,10 +199,130 @@ select, input[type="text"], input[type="number"], textarea {
   font-family: inherit;
 }
 
+input.input-bold {
+  border: 2px solid var(--border-strong);
+  border-radius: 8px;
+  padding: 9px 12px;
+  font-size: 14px;
+}
+input.input-bold::placeholder {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+
 input[type="range"] { width: 140px; }
 
 table { width: 100%; border-collapse: collapse; font-size: 13px; }
 th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
 th { color: var(--ink-soft); font-weight: 500; }
+th.sortable { cursor: pointer; user-select: none; }
+th.sortable:hover { color: var(--accent); }
+th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
 
 .hint { font-size: 12px; color: var(--ink-soft); }
+
+/* ===== Pill multi-select ===== */
+.pill-group {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pill {
+  padding: 5px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  font-size: 12px;
+  cursor: pointer;
+  color: var(--ink-soft);
+}
+.pill.selected {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: white;
+  font-weight: 600;
+}
+
+/* ===== Daily practice card-flip layout ===== */
+.flip-layout {
+  display: grid;
+  grid-template-columns: 180px 1fr;
+  gap: 20px;
+}
+.flip-index {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  padding: 10px;
+  max-height: 560px;
+  overflow-y: auto;
+}
+.flip-index-item {
+  padding: 7px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  color: var(--ink-soft);
+  display: flex;
+  justify-content: space-between;
+}
+.flip-index-item.active {
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-weight: 700;
+}
+.flip-main { position: relative; }
+.flip-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 12px;
+}
+.flip-arrow {
+  border: 1px solid var(--border);
+  background: var(--surface);
+  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.flip-arrow:disabled { opacity: 0.3; cursor: default; }
+.flip-counter { font-size: 12px; color: var(--ink-soft); }
+
+/* ===== Calendar ===== */
+.calendar-weekday-row, .calendar-week {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.calendar-weekday-row {
+  margin-bottom: 6px;
+}
+.calendar-weekday-row span {
+  font-size: 11px;
+  color: var(--ink-soft);
+  text-align: center;
+}
+.calendar-week {
+  border-radius: 8px;
+  padding: 4px;
+  margin-bottom: 6px;
+}
+.calendar-week.week-met { background: var(--green-week); }
+.calendar-week.week-unmet { background: var(--red-week); }
+.calendar-day {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  background: rgba(255,255,255,0.5);
+}
+.calendar-day.empty { background: transparent; }
+.calendar-day.checked { font-weight: 700; }
+.calendar-day.unchecked { color: var(--ink-faint); background: transparent; }

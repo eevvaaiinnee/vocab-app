@@ -63,10 +63,10 @@ export function demoteAfterQuizFail(word) {
  * @param {Object} opts - { count, newRatio, topic }
  */
 export function buildDailyPool(allWords, opts) {
-  const { count, newRatio, topic } = opts;
+  const { count, newRatio, topics } = opts; // topics: string[]，空数组=不限
   const today = new Date().toISOString().slice(0, 10);
 
-  const inTopic = (w) => !topic || topic === '随机' || w.topic === topic;
+  const inTopic = (w) => !topics || topics.length === 0 || topics.includes(w.topic);
 
   const favoritePool = allWords.filter((w) => w.is_favorite && inTopic(w));
 

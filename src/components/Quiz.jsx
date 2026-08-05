@@ -1,13 +1,22 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { demoteAfterQuizFail, computeNextDue } from '../lib/scheduler';
 
 export default function Quiz() {
   const [count, setCount] = useState(10);
-  const [quizWords, setQuizWords] = useState(null); // null = 未开始
-  const [results, setResults] = useState({}); // word_id -> true/false
+  const [quizWords, setQuizWords] = useState(null);
+  const [results, setResults] = useState({});
   const [accuracy, setAccuracy] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [lastLog, setLastLog] = useState(null);
+  const [history, setHistory] = useState([]);
+
+  useEffect(() => { loadHistory(); }, []);
+
+  async function loadHistory() {
+    const { data } = await supabase.from('quiz_log').select('*').order('date', { ascending: false }).limit(30);
+    setHistory(data || []);
+  }
 
   async function startQuiz() {
     const { data } = await supabase.from('words').select('*').eq('status', 'mastered');
@@ -31,19 +40,22 @@ export default function Quiz() {
   async function submit() {
     for (const w of quizWords) {
       if (results[w.id]) {
-        // 答对：留在朋友们，间隔继续推远
         await supabase.from('words').update({ next_due_date: computeNextDue({ ...w, status: 'mastered' }) }).eq('id', w.id);
       } else {
-        // 答错：回退状态 + 重置间隔
         const patch = demoteAfterQuizFail(w);
         await supabase.from('words').update(patch).eq('id', w.id);
       }
     }
+    const finalAccuracy = accuracy !== '' ? Number(accuracy) : computedAccuracy;
+    const today = new Date().toISOString().slice(0, 10);
     await supabase.from('quiz_log').insert({
+      date: today,
       word_ids: quizWords.map((w) => w.id),
-      accuracy: accuracy !== '' ? Number(accuracy) : computedAccuracy,
+      accuracy: finalAccuracy,
     });
+    setLastLog({ date: today, accuracy: finalAccuracy });
     setSubmitted(true);
+    loadHistory();
   }
 
   return (
@@ -51,9 +63,9 @@ export default function Quiz() {
       {!quizWords && (
         <div className="controls-row">
           <label>
-            数量
+            Count
             <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-              {[5, 10, 15, 20].map((n) => <option key={n} value={n}>{n}</option>)}
+              {[10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}
             </select>
           </label>
           <button className="btn primary" onClick={startQuiz}>从"朋友们"中抽题</button>
@@ -63,7 +75,7 @@ export default function Quiz() {
       {quizWords && !submitted && (
         <div className="card">
           <p className="hint" style={{ marginBottom: 12 }}>
-            以下是抽到的词，去屏幕外自测（比如让 mentor 口头考你）。测完后回来，把答错的词取消勾选：
+            These words were randomly selected — quiz yourself off-screen (e.g. have your mentor test you out loud). When you're done, come back and uncheck any words you got wrong.
           </p>
           {quizWords.map((w) => (
             <label key={w.id} style={{ display: 'block', marginBottom: 8 }}>
@@ -72,7 +84,7 @@ export default function Quiz() {
             </label>
           ))}
           <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-            <label>
+            <label className="hint">
               正确率（自动算出 {computedAccuracy}%，也可手动改）
               <input type="number" min="0" max="100" placeholder={String(computedAccuracy)}
                 value={accuracy} onChange={(e) => setAccuracy(e.target.value)} style={{ width: 60, marginLeft: 6 }} />
@@ -82,10 +94,28 @@ export default function Quiz() {
         </div>
       )}
 
-      {submitted && (
+      {submitted && lastLog && (
         <div className="card">
-          <p>本次 quiz 完成，正确率 {accuracy || computedAccuracy}%，答错的词已回退到复习队列。</p>
+          <p>{lastLog.date}，本次 quiz 完成，正确率 {lastLog.accuracy}%，答错的词已回退到复习队列。</p>
           <button className="btn" onClick={() => setQuizWords(null)}>再来一次</button>
+        </div>
+      )}
+
+      {history.length > 0 && (
+        <div className="card">
+          <p className="hint" style={{ fontWeight: 700, marginBottom: 8 }}>历史记录</p>
+          <table>
+            <thead><tr><th>日期</th><th>词数</th><th>正确率</th></tr></thead>
+            <tbody>
+              {history.map((h) => (
+                <tr key={h.id}>
+                  <td>{h.date}</td>
+                  <td>{h.word_ids.length}</td>
+                  <td>{h.accuracy}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
     </div>
