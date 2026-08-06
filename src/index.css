@@ -275,6 +275,14 @@ th.sortable:hover { color: var(--primary); }
 th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
 
 .hint { font-size: 12px; color: var(--ink-soft); }
+.word-highlight {
+  display: inline-block;
+  background: var(--primary-soft);
+  color: var(--primary);
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 6px;
+}
 .wordlist-card { padding-left: 28px; }
 
 /* ===== Pill multi-select ===== */

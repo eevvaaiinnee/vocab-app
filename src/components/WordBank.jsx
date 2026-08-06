@@ -201,10 +201,9 @@ export default function WordBank() {
           <tbody>
             {filtered.map((w) => {
               const tag = getTag(w);
-              const rowTint = w.topics && w.topics.length ? topicColor(w.topics[0]).bg : 'transparent';
               return (
-                <tr key={w.id} style={{ background: rowTint }}>
-                  <td style={{ fontWeight: 600 }}>{w.term}</td>
+                <tr key={w.id}>
+                  <td><span className="word-highlight">{w.term}</span></td>
                   <td>{w.chinese_meaning}</td>
                   <td>
                     {(w.topics || []).map((t) => {
