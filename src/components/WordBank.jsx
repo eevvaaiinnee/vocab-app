@@ -26,6 +26,8 @@ export default function WordBank() {
   const [sortDir, setSortDir] = useState('asc');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingWordTopicsId, setEditingWordTopicsId] = useState(null);
+  const [viewSentencesWord, setViewSentencesWord] = useState(null);
+  const [modalSentences, setModalSentences] = useState([]);
 
   useEffect(() => { load(); }, []);
 
@@ -34,6 +36,27 @@ export default function WordBank() {
     const { data: t } = await supabase.from('topics').select('*').order('name');
     setWords(w || []);
     setTopicRows(t || []);
+  }
+
+  async function openSentences(w) {
+    const { data } = await supabase.from('sentences').select('*').eq('word_id', w.id).order('order_index');
+    setModalSentences(data || []);
+    setViewSentencesWord(w);
+  }
+
+  async function updateSentenceText(id, text) {
+    setModalSentences((prev) => prev.map((s) => (s.id === id ? { ...s, sentence: text } : s)));
+  }
+
+  async function saveSentence(s) {
+    await supabase.from('sentences').update({ sentence: s.sentence }).eq('id', s.id);
+  }
+
+  async function deleteSentence(id) {
+    const ok = window.confirm('Delete this example sentence? This cannot be undone.');
+    if (!ok) return;
+    await supabase.from('sentences').delete().eq('id', id);
+    setModalSentences((prev) => prev.filter((s) => s.id !== id));
   }
 
   async function remove(id) {
@@ -240,6 +263,7 @@ export default function WordBank() {
                       <button className={`btn ${w.is_favorite ? 'active' : ''}`} onClick={() => toggleGeNe(w)}>
                         {w.is_favorite ? '↩ Unmark GeNe' : 'Mark as GeNe'}
                       </button>
+                      <button className="btn" onClick={() => openSentences(w)}>View Sentences</button>
                       <button className="btn" onClick={() => remove(w.id)}>Delete</button>
                     </div>
                   </td>
@@ -249,6 +273,32 @@ export default function WordBank() {
           </tbody>
         </table>
       </div>
+
+      {viewSentencesWord && (
+        <div className="modal-overlay" onClick={() => setViewSentencesWord(null)}>
+          <div className="modal-box" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <strong style={{ fontSize: 15 }}>Sentences for "{viewSentencesWord.term}"</strong>
+              <button className="modal-close" onClick={() => setViewSentencesWord(null)}>✕</button>
+            </div>
+            <div className="modal-scroll-body">
+              {modalSentences.map((s) => (
+                <div key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+                  <input
+                    type="text"
+                    className="input-bold"
+                    value={s.sentence}
+                    onChange={(e) => updateSentenceText(s.id, e.target.value)}
+                    onBlur={() => saveSentence(s)}
+                  />
+                  <button className="btn" onClick={() => deleteSentence(s.id)}>Delete</button>
+                </div>
+              ))}
+              {!modalSentences.length && <p className="hint">No example sentences for this word.</p>}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

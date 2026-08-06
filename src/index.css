@@ -482,7 +482,7 @@ th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
 .calendar-day.future { color: var(--ink-faint); background: var(--grey-week); font-weight: 500; }
 .calendar-day.past-unchecked { color: var(--rose); background: rgba(255,255,255,0.4); }
 .calendar-day.checked { color: var(--primary); }
-.calendar-day.today { border: 3px solid var(--ink); font-weight: 800; }
+.calendar-day.today { border: 1.5px solid var(--ink); font-weight: 800; }
 .calendar-day.today.checked { background: var(--green-week); }
 .calendar-day.today:not(.checked) { background: var(--grey-week); }
 .calendar-day.clickable { cursor: pointer; }
