@@ -68,7 +68,7 @@ export function buildDailyPool(allWords, opts) {
   const { count, newRatio, topics } = opts; // topics: string[]，空数组=不限
   const today = localDateStr();
 
-  const inTopic = (w) => !topics || topics.length === 0 || topics.includes(w.topic);
+  const inTopic = (w) => !topics || topics.length === 0 || (w.topics || []).some((t) => topics.includes(t));
 
   const favoritePool = allWords.filter((w) => w.is_favorite && inTopic(w));
 

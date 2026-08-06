@@ -11,12 +11,14 @@ const TAG_CLASS = {
 
 export default function WordCard({ word, sentences, onToggleFavorite, onMarkMastered }) {
   const tag = getTag(word);
-  const tc = topicColor(word.topic);
   const isMastered = word.status === 'mastered';
   return (
     <div className="card">
       <span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span>
-      <span className="topic-pill" style={{ background: tc.bg, color: tc.text }}>{word.topic}</span>
+      {(word.topics || []).map((t) => {
+        const c = topicColor(t);
+        return <span key={t} className="topic-pill" style={{ background: c.bg, color: c.text }}>{t}</span>;
+      })}
       <div className="word-term">{word.term}</div>
       <div className="word-meaning">{word.chinese_meaning}</div>
       <ol className="sentence-list">

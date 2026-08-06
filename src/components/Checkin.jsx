@@ -26,7 +26,7 @@ export default function Checkin() {
 
   async function toggleToday() {
     const isChecked = checkedDates.has(today);
-    await supabase.from('checkins').upsert({ date: today, success: !isChecked });
+    await supabase.from('checkins').upsert({ date: today, success: !isChecked }, { onConflict: 'date' });
     setCheckedDates((prev) => {
       const next = new Set(prev);
       if (isChecked) next.delete(today); else next.add(today);

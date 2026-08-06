@@ -25,7 +25,7 @@ export default function WordBank() {
   const [sortField, setSortField] = useState('term');
   const [sortDir, setSortDir] = useState('asc');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
-  const [editingWordTopicId, setEditingWordTopicId] = useState(null);
+  const [editingWordTopicsId, setEditingWordTopicsId] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -53,11 +53,11 @@ export default function WordBank() {
     load();
   }
 
-  async function assignWordTopic(w, newTopic) {
-    setEditingWordTopicId(null);
-    if (!newTopic || newTopic === w.topic) return;
-    await supabase.from('words').update({ topic: newTopic }).eq('id', w.id);
-    load();
+  async function toggleWordTopic(w, topicName) {
+    const current = w.topics || [];
+    const next = current.includes(topicName) ? current.filter((t) => t !== topicName) : [...current, topicName];
+    await supabase.from('words').update({ topics: next }).eq('id', w.id);
+    setWords((prev) => prev.map((x) => (x.id === w.id ? { ...x, topics: next } : x)));
   }
 
   // ===== 主题分类管理（独立于具体单词）=====
@@ -74,17 +74,25 @@ export default function WordBank() {
     const trimmed = newName.trim();
     if (!trimmed || trimmed === t.name) return;
     await supabase.from('topics').update({ name: trimmed }).eq('id', t.id);
-    await supabase.from('words').update({ topic: trimmed }).eq('topic', t.name);
+    const affected = words.filter((w) => (w.topics || []).includes(t.name));
+    for (const w of affected) {
+      const next = w.topics.map((x) => (x === t.name ? trimmed : x));
+      await supabase.from('words').update({ topics: next }).eq('id', w.id);
+    }
     setFilterTopics((prev) => prev.map((x) => (x === t.name ? trimmed : x)));
     load();
   }
 
   async function deleteCategory(t, e) {
     e.stopPropagation();
-    const countInTopic = words.filter((w) => w.topic === t.name).length;
-    const ok = window.confirm(`Delete topic "${t.name}" and all ${countInTopic} word(s) in it? This cannot be undone.`);
+    const countInTopic = words.filter((w) => (w.topics || []).includes(t.name)).length;
+    const ok = window.confirm(`Delete topic "${t.name}"? It will be removed from ${countInTopic} word(s) (the words themselves are kept).`);
     if (!ok) return;
-    await supabase.from('words').delete().eq('topic', t.name);
+    const affected = words.filter((w) => (w.topics || []).includes(t.name));
+    for (const w of affected) {
+      const next = w.topics.filter((x) => x !== t.name);
+      await supabase.from('words').update({ topics: next }).eq('id', w.id);
+    }
     await supabase.from('topics').delete().eq('id', t.id);
     setFilterTopics((prev) => prev.filter((x) => x !== t.name));
     load();
@@ -103,7 +111,7 @@ export default function WordBank() {
 
   const filtered = useMemo(() => {
     let list = words.filter((w) => {
-      if (filterTopics.length && !filterTopics.includes(w.topic)) return false;
+      if (filterTopics.length && !(w.topics || []).some((t) => filterTopics.includes(t))) return false;
       if (filterTags.length && !filterTags.includes(getTag(w))) return false;
       return true;
     });
@@ -124,7 +132,7 @@ export default function WordBank() {
       <div className="params-panel">
         <div className="params-row">
           <div className="params-field" style={{ flex: 1 }}>
-            <span className="params-field-label">Topic categories — click a topic to filter, ✎ to rename, ✕ to delete</span>
+            <span className="params-field-label">Topic categories</span>
             <div className="pill-group">
               {topicRows.map((t) => {
                 const c = topicColor(t.name);
@@ -183,7 +191,7 @@ export default function WordBank() {
             <tr style={{ fontSize: 15, fontWeight: 700 }}>
               <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
               <th>Meaning</th>
-              <th>Topic</th>
+              <th>Topics</th>
               <th>Tag</th>
               <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
               <th className="sortable" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
@@ -192,24 +200,34 @@ export default function WordBank() {
           </thead>
           <tbody>
             {filtered.map((w) => {
-              const tc = topicColor(w.topic);
               const tag = getTag(w);
+              const rowTint = w.topics && w.topics.length ? topicColor(w.topics[0]).bg : 'transparent';
               return (
-                <tr key={w.id}>
+                <tr key={w.id} style={{ background: rowTint }}>
                   <td style={{ fontWeight: 600 }}>{w.term}</td>
                   <td>{w.chinese_meaning}</td>
                   <td>
-                    {editingWordTopicId === w.id ? (
-                      <select autoFocus defaultValue={w.topic}
-                        onChange={(e) => assignWordTopic(w, e.target.value)}
-                        onBlur={() => setEditingWordTopicId(null)}>
-                        {topicRows.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
-                      </select>
+                    {(w.topics || []).map((t) => {
+                      const c = topicColor(t);
+                      return <span key={t} className="topic-pill" style={{ background: c.text, color: 'white', marginBottom: 3 }}>{t}</span>;
+                    })}
+                    {editingWordTopicsId === w.id ? (
+                      <div className="card" style={{ marginTop: 6, padding: 10 }}>
+                        <div className="pill-group">
+                          {topicRows.map((t) => {
+                            const on = (w.topics || []).includes(t.name);
+                            return (
+                              <button key={t.id} className={`pill ${on ? 'selected' : ''}`}
+                                onClick={() => toggleWordTopic(w, t.name)}>
+                                {t.name}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <button className="btn" style={{ marginTop: 8 }} onClick={() => setEditingWordTopicsId(null)}>Done</button>
+                      </div>
                     ) : (
-                      <span className="topic-pill" style={{ background: tc.bg, color: tc.text, cursor: 'pointer' }}
-                        onClick={() => setEditingWordTopicId(w.id)} title="Click to reassign topic">
-                        {w.topic} ✎
-                      </span>
+                      <button className="pill" onClick={() => setEditingWordTopicsId(w.id)}>+ Edit topics</button>
                     )}
                   </td>
                   <td><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>

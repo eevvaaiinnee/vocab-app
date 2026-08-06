@@ -199,15 +199,22 @@ select, input[type="text"], input[type="number"], textarea {
 }
 
 input.input-bold {
-  border: 2px solid var(--border-strong);
+  border: none;
+  background: var(--primary-soft);
   border-radius: 10px;
   padding: 13px 16px;
   font-size: 14px;
+  width: 100%;
+}
+input.input-bold:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
 }
 input.input-bold::placeholder {
   color: var(--ink-faint);
   font-size: 12px;
 }
+.input-uniform { max-width: 480px; display: block; }
 
 input[type="range"] {
   width: 100%;

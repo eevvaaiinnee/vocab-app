@@ -74,7 +74,10 @@ export default function DailyPractice() {
       await supabase.from('review_log').insert({ word_id: w.id });
     }
 
-    await supabase.from('daily_sessions').upsert({ date: todayStr(), word_ids: p.map((w) => w.id) });
+    await supabase.from('daily_sessions').upsert(
+      { date: todayStr(), word_ids: p.map((w) => w.id) },
+      { onConflict: 'date' }
+    );
     setSessionExists(true);
     init();
   }
@@ -124,7 +127,7 @@ export default function DailyPractice() {
             </select>
           </div>
           <div className="params-field" style={{ flex: 1, minWidth: 220 }}>
-            <span className="params-field-label">Topics (multi-select, none = all)</span>
+            <span className="params-field-label">Topics</span>
             <div className="pill-group">
               {topics.map((t) => {
                 const c = topicColor(t);
