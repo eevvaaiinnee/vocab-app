@@ -90,11 +90,11 @@ export default function Quiz() {
               {w.term}
             </label>
           ))}
-          <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center' }}>
-            <label className="hint">
-              Accuracy (auto-calculated: {computedAccuracy}%, or enter manually)
+          <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+            <label className="hint" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+              Accuracy (auto-calculated: <span className="days-left-badge">{computedAccuracy}%</span>, or enter manually)
               <input type="number" min="0" max="100" placeholder={String(computedAccuracy)}
-                value={accuracy} onChange={(e) => setAccuracy(e.target.value)} style={{ width: 60, marginLeft: 6 }} />
+                value={accuracy} onChange={(e) => setAccuracy(e.target.value)} style={{ width: 60 }} />
             </label>
             <button className="btn primary" onClick={submit}>Submit results</button>
           </div>

@@ -2,9 +2,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { buildDailyPool, computeNextDue, estimateDaysLeft } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
+import { localDateStr } from '../lib/dateUtils';
 import WordCard from './WordCard';
 
-const todayStr = () => new Date().toISOString().slice(0, 10);
+const todayStr = () => localDateStr();
 
 export default function DailyPractice() {
   const [allWords, setAllWords] = useState([]);
@@ -153,13 +154,10 @@ export default function DailyPractice() {
         </div>
 
         <div className="params-row">
-          <div className="params-field" style={{ flex: 1, minWidth: 220 }}>
+          <div className="params-field" style={{ flex: 1, minWidth: 260 }}>
             <span className="params-field-label">New word ratio · {Math.round(ratio * 100)}%</span>
             <input type="range" className="slider-secondary" min="0" max="1" step="0.1" value={ratio}
               onChange={(e) => setRatio(Number(e.target.value))} />
-          </div>
-          <div className="params-field">
-            <span className="params-field-label">Pace</span>
             <div className="days-left-line">
               Approximately <span className="days-left-badge">{daysLeft}</span> days left to cover all new words at this pace
             </div>
@@ -183,20 +181,22 @@ export default function DailyPractice() {
               <strong style={{ fontSize: 15 }}>Past sessions</strong>
               <button className="modal-close" onClick={() => setShowHistory(false)}>✕</button>
             </div>
-            {history.map((h) => (
-              <div key={h.id} className="card" style={{ marginBottom: 10 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                  <div>
-                    <div className="hint" style={{ fontWeight: 700, marginBottom: 4 }}>{h.date} · {h.word_ids.length} words</div>
-                    <div style={{ fontSize: 13 }}>
-                      {h.word_ids.map((id) => wordMap[id]?.term).filter(Boolean).join(', ')}
+            <div className="modal-scroll-body">
+              {history.map((h) => (
+                <div key={h.id} className="card" style={{ marginBottom: 10 }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                    <div>
+                      <div className="hint" style={{ fontWeight: 700, marginBottom: 4 }}>{h.date} · {h.word_ids.length} words</div>
+                      <div style={{ fontSize: 13 }}>
+                        {h.word_ids.map((id) => wordMap[id]?.term).filter(Boolean).join(', ')}
+                      </div>
                     </div>
+                    <button className="btn" onClick={() => deleteHistoryEntry(h.id)}>Delete</button>
                   </div>
-                  <button className="btn" onClick={() => deleteHistoryEntry(h.id)}>Delete</button>
                 </div>
-              </div>
-            ))}
-            {!history.length && <p className="hint">No past sessions yet.</p>}
+              ))}
+              {!history.length && <p className="hint">No past sessions yet.</p>}
+            </div>
           </div>
         </div>
       )}

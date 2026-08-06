@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getMonthWeeks } from '../lib/calendar';
+import { localDateStr } from '../lib/dateUtils';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Checkin() {
   const [checkedDates, setCheckedDates] = useState(new Set());
   const now = new Date();
-  const today = now.toISOString().slice(0, 10);
+  const today = localDateStr(now);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().slice(0, 10);
-    const nextMonthStart = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString().slice(0, 10);
+    const monthStart = localDateStr(new Date(now.getFullYear(), now.getMonth(), 1));
+    const nextMonthStart = localDateStr(new Date(now.getFullYear(), now.getMonth() + 1, 1));
     const { data } = await supabase
       .from('checkins')
       .select('date')
@@ -70,7 +71,8 @@ export default function Checkin() {
 
                 return (
                   <div key={d} className={cls} onClick={isToday ? toggleToday : undefined}>
-                    {dayNum}{isChecked ? <span className="calendar-check-icon">✓</span> : null}
+                    {isChecked ? <span className="calendar-check-icon">✓</span> : null}
+                    <span style={{ position: 'relative', zIndex: 1 }}>{dayNum}</span>
                   </div>
                 );
               })}

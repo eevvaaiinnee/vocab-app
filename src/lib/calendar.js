@@ -1,3 +1,5 @@
+import { localDateStr } from './dateUtils';
+
 // 生成当月日历，按"周一为一周第一天"分组
 // 返回 weeks: [[date|null, ...7个], ...]
 export function getMonthWeeks(year, month /* 0-indexed */) {
@@ -13,7 +15,7 @@ export function getMonthWeeks(year, month /* 0-indexed */) {
 
   for (let day = 1; day <= daysInMonth; day++) {
     const date = new Date(year, month, day);
-    week.push(date.toISOString().slice(0, 10));
+    week.push(localDateStr(date));
     if (week.length === 7) {
       weeks.push(week);
       week = [];

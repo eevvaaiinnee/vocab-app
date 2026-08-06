@@ -67,7 +67,7 @@ export default function AddWords() {
 
       {entries.map((e, idx) => (
         <div className="card" key={idx}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
             <input type="text" className="input-bold" placeholder="Word"
               style={{ fontSize: 18, fontWeight: 600, width: '60%' }}
               value={e.term} onChange={(ev) => updateEntry(idx, 'term', ev.target.value)} />
@@ -75,11 +75,11 @@ export default function AddWords() {
               <button className="btn" onClick={() => removeEntry(idx)}>Remove</button>
             )}
           </div>
-          <input type="text" className="input-bold" placeholder="Meaning" style={{ width: '100%', margin: '10px 0' }}
+          <input type="text" className="input-bold" placeholder="Meaning" style={{ width: '100%', marginBottom: 16 }}
             value={e.chinese_meaning} onChange={(ev) => updateEntry(idx, 'chinese_meaning', ev.target.value)} />
           {e.sentences.map((s, sIdx) => (
             <input key={sIdx} type="text" className="input-bold" placeholder={`Example sentence ${sIdx + 1}`}
-              style={{ width: '100%', marginBottom: 6 }}
+              style={{ width: '100%', marginBottom: 10 }}
               value={s} onChange={(ev) => updateSentence(idx, sIdx, ev.target.value)} />
           ))}
         </div>

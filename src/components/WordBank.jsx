@@ -23,6 +23,7 @@ export default function WordBank() {
   const [filterTags, setFilterTags] = useState([]);
   const [sortField, setSortField] = useState('term');
   const [sortDir, setSortDir] = useState('asc');
+  const [editingTopicId, setEditingTopicId] = useState(null);
 
   useEffect(() => { load(); }, []);
 
@@ -40,6 +41,19 @@ export default function WordBank() {
   async function toggleMastered(w) {
     const newStatus = w.status === 'mastered' ? 'learning' : 'mastered';
     await supabase.from('words').update({ status: newStatus }).eq('id', w.id);
+    load();
+  }
+
+  async function toggleGeNe(w) {
+    await supabase.from('words').update({ is_favorite: !w.is_favorite }).eq('id', w.id);
+    load();
+  }
+
+  async function saveTopic(w, newTopic) {
+    const trimmed = newTopic.trim();
+    if (!trimmed || trimmed === w.topic) { setEditingTopicId(null); return; }
+    await supabase.from('words').update({ topic: trimmed }).eq('id', w.id);
+    setEditingTopicId(null);
     load();
   }
 
@@ -123,7 +137,7 @@ export default function WordBank() {
         </div>
       </div>
 
-      <div className="card" style={{ padding: 0 }}>
+      <div className="card wordlist-card" style={{ paddingTop: 20, paddingRight: 0, paddingBottom: 0 }}>
         <table>
           <thead>
             <tr style={{ fontSize: 15, fontWeight: 700 }}>
@@ -144,21 +158,46 @@ export default function WordBank() {
                 <tr key={w.id}>
                   <td style={{ fontWeight: 600 }}>{w.term}</td>
                   <td>{w.chinese_meaning}</td>
-                  <td><span className="topic-pill" style={{ background: tc.bg, color: tc.text }}>{w.topic}</span></td>
+                  <td>
+                    {editingTopicId === w.id ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        defaultValue={w.topic}
+                        list="topic-options"
+                        style={{ width: 140 }}
+                        onBlur={(e) => saveTopic(w, e.target.value)}
+                        onKeyDown={(e) => { if (e.key === 'Enter') saveTopic(w, e.target.value); if (e.key === 'Escape') setEditingTopicId(null); }}
+                      />
+                    ) : (
+                      <span className="topic-pill" style={{ background: tc.bg, color: tc.text, cursor: 'pointer' }}
+                        onClick={() => setEditingTopicId(w.id)} title="Click to edit topic">
+                        {w.topic} ✎
+                      </span>
+                    )}
+                  </td>
                   <td><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>
                   <td>{w.added_date}</td>
                   <td>{w.exposure_count}</td>
                   <td>
-                    <button className={`btn ${w.status === 'mastered' ? 'active' : ''}`} onClick={() => toggleMastered(w)}>
-                      {w.status === 'mastered' ? '↩ Unmark Friend' : 'Mark as Friend'}
-                    </button>{' '}
-                    <button className="btn" onClick={() => remove(w.id)}>Delete</button>
+                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                      <button className={`btn ${w.status === 'mastered' ? 'active' : ''}`} onClick={() => toggleMastered(w)}>
+                        {w.status === 'mastered' ? '↩ Unmark Friend' : 'Mark as Friend'}
+                      </button>
+                      <button className={`btn ${w.is_favorite ? 'active' : ''}`} onClick={() => toggleGeNe(w)}>
+                        {w.is_favorite ? '↩ Unmark GeNe' : 'Mark as GeNe'}
+                      </button>
+                      <button className="btn" onClick={() => remove(w.id)}>Delete</button>
+                    </div>
                   </td>
                 </tr>
               );
             })}
           </tbody>
         </table>
+        <datalist id="topic-options">
+          {topics.map((t) => <option key={t} value={t} />)}
+        </datalist>
       </div>
     </div>
   );

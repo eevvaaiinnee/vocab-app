@@ -2,6 +2,8 @@
 // 调度算法：决定每天出现哪些词、下次复习间隔是多少
 // ============================================
 
+import { localDateStr } from './dateUtils';
+
 // 每个"阶段跃迁"对应的间隔天数
 const INTERVALS = {
   toStranger2: 1,   // 陌生人 1 -> 2
@@ -42,7 +44,7 @@ export function computeNextDue(word, fromDate = new Date()) {
 
   const d = new Date(fromDate);
   d.setDate(d.getDate() + days);
-  return d.toISOString().slice(0, 10);
+  return localDateStr(d);
 }
 
 // quiz 答错后：状态回退 + 间隔重置
@@ -53,7 +55,7 @@ export function demoteAfterQuizFail(word) {
   return {
     status: 'learning',
     exposure_count: newCount,
-    next_due_date: d.toISOString().slice(0, 10),
+    next_due_date: localDateStr(d),
   };
 }
 
@@ -64,7 +66,7 @@ export function demoteAfterQuizFail(word) {
  */
 export function buildDailyPool(allWords, opts) {
   const { count, newRatio, topics } = opts; // topics: string[]，空数组=不限
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localDateStr();
 
   const inTopic = (w) => !topics || topics.length === 0 || topics.includes(w.topic);
 
