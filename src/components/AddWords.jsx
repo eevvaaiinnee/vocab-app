@@ -33,13 +33,15 @@ export default function AddWords() {
 
   async function saveAll() {
     setSaving(true);
+    const topicName = topic.trim() || 'Uncategorized';
+    await supabase.from('topics').upsert({ name: topicName }, { onConflict: 'name' });
     for (const e of validEntries) {
       const { data: wordRow, error } = await supabase
         .from('words')
         .insert({
           term: e.term.trim(),
           chinese_meaning: e.chinese_meaning.trim(),
-          topic: topic.trim() || 'Uncategorized',
+          topic: topicName,
         })
         .select()
         .single();
@@ -58,9 +60,10 @@ export default function AddWords() {
   return (
     <div>
       <div className="controls-row">
-        <label>
+        <label style={{ width: '100%' }}>
           Topic (applies to this batch)
           <input type="text" className="input-bold" placeholder="e.g. SAT high-frequency / Biology"
+            style={{ width: 420, maxWidth: '100%' }}
             value={topic} onChange={(e) => setTopic(e.target.value)} />
         </label>
       </div>

@@ -16,7 +16,6 @@ export default function DailyPractice() {
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [pool, setPool] = useState([]);
   const [sessionExists, setSessionExists] = useState(false);
-  const [checkedInToday, setCheckedInToday] = useState(false);
   const [current, setCurrent] = useState(0);
   const [showHistory, setShowHistory] = useState(false);
   const [history, setHistory] = useState([]);
@@ -26,6 +25,7 @@ export default function DailyPractice() {
   async function init() {
     const { data: words } = await supabase.from('words').select('*');
     const { data: sents } = await supabase.from('sentences').select('*').order('order_index');
+    const { data: topicRows } = await supabase.from('topics').select('*').order('name');
     setAllWords(words || []);
     const grouped = {};
     (sents || []).forEach((s) => {
@@ -33,7 +33,7 @@ export default function DailyPractice() {
       grouped[s.word_id].push(s);
     });
     setSentencesByWord(grouped);
-    setTopics([...new Set((words || []).map((w) => w.topic))]);
+    setTopics((topicRows || []).map((t) => t.name));
 
     const { data: session } = await supabase.from('daily_sessions').select('*').eq('date', todayStr()).maybeSingle();
     if (session) {
@@ -41,9 +41,6 @@ export default function DailyPractice() {
       setPool((words || []).filter((w) => ids.has(w.id)));
       setSessionExists(true);
     }
-
-    const { data: ci } = await supabase.from('checkins').select('*').eq('date', todayStr()).maybeSingle();
-    setCheckedInToday(!!ci?.success);
   }
 
   function toggleTopic(t) {
@@ -80,12 +77,6 @@ export default function DailyPractice() {
     await supabase.from('daily_sessions').upsert({ date: todayStr(), word_ids: p.map((w) => w.id) });
     setSessionExists(true);
     init();
-  }
-
-  async function toggleCheckIn() {
-    const next = !checkedInToday;
-    await supabase.from('checkins').upsert({ date: todayStr(), success: next });
-    setCheckedInToday(next);
   }
 
   async function toggleFavorite(word) {
@@ -231,17 +222,6 @@ export default function DailyPractice() {
               <button className="flip-arrow" disabled={current === pool.length - 1} onClick={() => setCurrent((c) => c + 1)}>→</button>
             </div>
           </div>
-        </div>
-      )}
-
-      {pool.length > 0 && (
-        <div className="checkin-cta-row">
-          <div className="checkin-cta-col">
-            <button className={`btn ${checkedInToday ? 'active' : 'primary'}`} onClick={toggleCheckIn}>
-              {checkedInToday ? '✓ Checked in — click to undo' : 'Check in for today'}
-            </button>
-          </div>
-          <div />
         </div>
       )}
     </div>

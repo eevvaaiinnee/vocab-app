@@ -71,7 +71,7 @@ export default function Checkin() {
 
                 return (
                   <div key={d} className={cls} onClick={isToday ? toggleToday : undefined}>
-                    {isChecked ? <span className="calendar-check-icon">✓</span> : null}
+                    {isChecked && !isFuture ? <span className="calendar-check-icon">✓</span> : null}
                     <span style={{ position: 'relative', zIndex: 1 }}>{dayNum}</span>
                   </div>
                 );

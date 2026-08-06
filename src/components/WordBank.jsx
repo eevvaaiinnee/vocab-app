@@ -19,17 +19,21 @@ const SORT_FIELDS = {
 
 export default function WordBank() {
   const [words, setWords] = useState([]);
+  const [topicRows, setTopicRows] = useState([]); // [{id, name}]
   const [filterTopics, setFilterTopics] = useState([]);
   const [filterTags, setFilterTags] = useState([]);
   const [sortField, setSortField] = useState('term');
   const [sortDir, setSortDir] = useState('asc');
-  const [editingTopicId, setEditingTopicId] = useState(null);
+  const [editingCategoryId, setEditingCategoryId] = useState(null);
+  const [editingWordTopicId, setEditingWordTopicId] = useState(null);
 
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const { data } = await supabase.from('words').select('*');
-    setWords(data || []);
+    const { data: w } = await supabase.from('words').select('*');
+    const { data: t } = await supabase.from('topics').select('*').order('name');
+    setWords(w || []);
+    setTopicRows(t || []);
   }
 
   async function remove(id) {
@@ -49,25 +53,43 @@ export default function WordBank() {
     load();
   }
 
-  async function saveTopic(w, newTopic) {
-    const trimmed = newTopic.trim();
-    if (!trimmed || trimmed === w.topic) { setEditingTopicId(null); return; }
-    await supabase.from('words').update({ topic: trimmed }).eq('id', w.id);
-    setEditingTopicId(null);
+  async function assignWordTopic(w, newTopic) {
+    setEditingWordTopicId(null);
+    if (!newTopic || newTopic === w.topic) return;
+    await supabase.from('words').update({ topic: newTopic }).eq('id', w.id);
     load();
   }
 
-  async function deleteTopic(t, e) {
+  // ===== 主题分类管理（独立于具体单词）=====
+  async function addCategory() {
+    const name = window.prompt('New topic name:');
+    if (!name || !name.trim()) return;
+    const { error } = await supabase.from('topics').insert({ name: name.trim() });
+    if (error) alert('That topic may already exist.');
+    load();
+  }
+
+  async function renameCategory(t, newName) {
+    setEditingCategoryId(null);
+    const trimmed = newName.trim();
+    if (!trimmed || trimmed === t.name) return;
+    await supabase.from('topics').update({ name: trimmed }).eq('id', t.id);
+    await supabase.from('words').update({ topic: trimmed }).eq('topic', t.name);
+    setFilterTopics((prev) => prev.map((x) => (x === t.name ? trimmed : x)));
+    load();
+  }
+
+  async function deleteCategory(t, e) {
     e.stopPropagation();
-    const countInTopic = words.filter((w) => w.topic === t).length;
-    const ok = window.confirm(`Delete topic "${t}" and all ${countInTopic} word(s) in it? This cannot be undone.`);
+    const countInTopic = words.filter((w) => w.topic === t.name).length;
+    const ok = window.confirm(`Delete topic "${t.name}" and all ${countInTopic} word(s) in it? This cannot be undone.`);
     if (!ok) return;
-    await supabase.from('words').delete().eq('topic', t);
-    setFilterTopics((prev) => prev.filter((x) => x !== t));
+    await supabase.from('words').delete().eq('topic', t.name);
+    await supabase.from('topics').delete().eq('id', t.id);
+    setFilterTopics((prev) => prev.filter((x) => x !== t.name));
     load();
   }
 
-  const topics = [...new Set(words.map((w) => w.topic))];
   const allTags = ['Stranger', 'OneNoodle', 'Acquaintance', 'GeNe', 'Friend'];
 
   function toggleFilter(list, setList, val) {
@@ -102,20 +124,38 @@ export default function WordBank() {
       <div className="params-panel">
         <div className="params-row">
           <div className="params-field" style={{ flex: 1 }}>
-            <span className="params-field-label">Filter by Topic</span>
+            <span className="params-field-label">Topic categories — click a topic to filter, ✎ to rename, ✕ to delete</span>
             <div className="pill-group">
-              {topics.map((t) => {
-                const c = topicColor(t);
-                const sel = filterTopics.includes(t);
+              {topicRows.map((t) => {
+                const c = topicColor(t.name);
+                const sel = filterTopics.includes(t.name);
+                if (editingCategoryId === t.id) {
+                  return (
+                    <input
+                      key={t.id}
+                      type="text"
+                      autoFocus
+                      defaultValue={t.name}
+                      style={{ width: 140 }}
+                      onBlur={(e) => renameCategory(t, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') renameCategory(t, e.target.value);
+                        if (e.key === 'Escape') setEditingCategoryId(null);
+                      }}
+                    />
+                  );
+                }
                 return (
-                  <button key={t} className={`pill ${sel ? 'selected' : ''}`}
+                  <button key={t.id} className={`pill ${sel ? 'selected' : ''}`}
                     style={sel ? { background: c.text, borderColor: c.text } : {}}
-                    onClick={() => toggleFilter(filterTopics, setFilterTopics, t)}>
-                    {t}
-                    <span className="pill-delete-x" onClick={(e) => deleteTopic(t, e)}>✕</span>
+                    onClick={() => toggleFilter(filterTopics, setFilterTopics, t.name)}>
+                    {t.name}
+                    <span className="pill-delete-x" onClick={(e) => { e.stopPropagation(); setEditingCategoryId(t.id); }} title="Rename">✎</span>
+                    <span className="pill-delete-x" onClick={(e) => deleteCategory(t, e)} title="Delete">✕</span>
                   </button>
                 );
               })}
+              <button className="btn" onClick={addCategory}>+ New Topic</button>
             </div>
           </div>
         </div>
@@ -159,19 +199,15 @@ export default function WordBank() {
                   <td style={{ fontWeight: 600 }}>{w.term}</td>
                   <td>{w.chinese_meaning}</td>
                   <td>
-                    {editingTopicId === w.id ? (
-                      <input
-                        type="text"
-                        autoFocus
-                        defaultValue={w.topic}
-                        list="topic-options"
-                        style={{ width: 140 }}
-                        onBlur={(e) => saveTopic(w, e.target.value)}
-                        onKeyDown={(e) => { if (e.key === 'Enter') saveTopic(w, e.target.value); if (e.key === 'Escape') setEditingTopicId(null); }}
-                      />
+                    {editingWordTopicId === w.id ? (
+                      <select autoFocus defaultValue={w.topic}
+                        onChange={(e) => assignWordTopic(w, e.target.value)}
+                        onBlur={() => setEditingWordTopicId(null)}>
+                        {topicRows.map((t) => <option key={t.id} value={t.name}>{t.name}</option>)}
+                      </select>
                     ) : (
                       <span className="topic-pill" style={{ background: tc.bg, color: tc.text, cursor: 'pointer' }}
-                        onClick={() => setEditingTopicId(w.id)} title="Click to edit topic">
+                        onClick={() => setEditingWordTopicId(w.id)} title="Click to reassign topic">
                         {w.topic} ✎
                       </span>
                     )}
@@ -195,9 +231,6 @@ export default function WordBank() {
             })}
           </tbody>
         </table>
-        <datalist id="topic-options">
-          {topics.map((t) => <option key={t} value={t} />)}
-        </datalist>
       </div>
     </div>
   );
