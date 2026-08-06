@@ -280,8 +280,9 @@ th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
   background: var(--primary-soft);
   color: var(--primary);
   font-weight: 700;
-  padding: 3px 10px;
-  border-radius: 6px;
+  font-size: 16px;
+  padding: 8px 16px;
+  border-radius: 8px;
 }
 .wordlist-card { padding-left: 28px; }
 

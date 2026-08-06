@@ -208,7 +208,7 @@ export default function WordBank() {
                   <td>
                     {(w.topics || []).map((t) => {
                       const c = topicColor(t);
-                      return <span key={t} className="topic-pill" style={{ background: c.text, color: 'white', marginBottom: 3 }}>{t}</span>;
+                      return <span key={t} className="topic-pill" style={{ background: c.bg, color: c.text, marginBottom: 3 }}>{t}</span>;
                     })}
                     {editingWordTopicsId === w.id ? (
                       <div className="card" style={{ marginTop: 6, padding: 10 }}>
