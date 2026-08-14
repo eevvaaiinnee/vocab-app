@@ -2,10 +2,12 @@ import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getMonthWeeks } from '../lib/calendar';
 import { localDateStr } from '../lib/dateUtils';
+import { useAuth, requireAuth } from '../lib/AuthContext';
 
 const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 
 export default function Checkin() {
+  const { session } = useAuth();
   const [checkedDates, setCheckedDates] = useState(new Set());
   const now = new Date();
   const today = localDateStr(now);
@@ -25,6 +27,7 @@ export default function Checkin() {
   }
 
   async function toggleToday() {
+    if (!requireAuth(session)) return;
     const isChecked = checkedDates.has(today);
     await supabase.from('checkins').upsert({ date: today, success: !isChecked }, { onConflict: 'date' });
     setCheckedDates((prev) => {

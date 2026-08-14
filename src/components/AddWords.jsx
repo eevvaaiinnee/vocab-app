@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth, requireAuth } from '../lib/AuthContext';
 
 const emptyEntry = () => ({ term: '', chinese_meaning: '', sentences: ['', '', '', '', ''] });
 
 export default function AddWords() {
+  const { session } = useAuth();
   const [topic, setTopic] = useState('');
   const [entries, setEntries] = useState([emptyEntry()]);
   const [saving, setSaving] = useState(false);
@@ -32,6 +34,7 @@ export default function AddWords() {
   const validEntries = entries.filter((e) => e.term.trim());
 
   async function saveAll() {
+    if (!requireAuth(session)) return;
     setSaving(true);
     const topicName = topic.trim() || 'Uncategorized';
     await supabase.from('topics').upsert({ name: topicName }, { onConflict: 'name' });

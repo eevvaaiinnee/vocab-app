@@ -3,11 +3,13 @@ import { supabase } from '../lib/supabaseClient';
 import { buildDailyPool, computeNextDue, estimateDaysLeft } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 import { localDateStr } from '../lib/dateUtils';
+import { useAuth, requireAuth } from '../lib/AuthContext';
 import WordCard from './WordCard';
 
 const todayStr = () => localDateStr();
 
 export default function DailyPractice() {
+  const { session } = useAuth();
   const [allWords, setAllWords] = useState([]);
   const [sentencesByWord, setSentencesByWord] = useState({});
   const [topics, setTopics] = useState([]);
@@ -53,6 +55,7 @@ export default function DailyPractice() {
   );
 
   async function generateToday() {
+    if (!requireAuth(session)) return;
     if (sessionExists) {
       const ok = window.confirm("Today's words have already been generated. Regenerate and replace them?");
       if (!ok) return;
@@ -83,12 +86,14 @@ export default function DailyPractice() {
   }
 
   async function toggleFavorite(word) {
+    if (!requireAuth(session)) return;
     const updated = { ...word, is_favorite: !word.is_favorite };
     await supabase.from('words').update({ is_favorite: updated.is_favorite }).eq('id', word.id);
     syncLocal(updated);
   }
 
   async function markMastered(word) {
+    if (!requireAuth(session)) return;
     const mastered = word.status !== 'mastered';
     const updated = { ...word, status: mastered ? 'mastered' : 'learning' };
     await supabase.from('words').update({ status: updated.status }).eq('id', word.id);
@@ -107,6 +112,7 @@ export default function DailyPractice() {
   }
 
   async function deleteHistoryEntry(id) {
+    if (!requireAuth(session)) return;
     const ok = window.confirm('Delete this session record? This cannot be undone.');
     if (!ok) return;
     await supabase.from('daily_sessions').delete().eq('id', id);

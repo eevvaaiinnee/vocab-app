@@ -49,7 +49,6 @@ create table topics (
   id   uuid primary key default uuid_generate_v4(),
   name text not null unique
 );
-alter table topics disable row level security;
 
 -- 每日练习记录（保存当天生成的词，供当天持续展示 + 历史查看）
 create table daily_sessions (
@@ -58,7 +57,6 @@ create table daily_sessions (
   word_ids   uuid[] not null,
   created_at timestamptz not null default now()
 );
-alter table daily_sessions disable row level security;
 
 -- Quiz 记录
 create table quiz_log (
@@ -73,9 +71,38 @@ create index idx_words_due on words(next_due_date);
 create index idx_words_topic on words(topic);
 create index idx_words_status on words(status);
 
--- 两人共用同一份数据，不做行级隔离（RLS 可以先关闭，简单起见）
-alter table words disable row level security;
-alter table sentences disable row level security;
-alter table review_log disable row level security;
-alter table checkins disable row level security;
-alter table quiz_log disable row level security;
+-- ============================================
+-- 权限控制：任何人可读（查看），只有登录用户（你 + mentor）可写
+-- ============================================
+alter table words enable row level security;
+alter table sentences enable row level security;
+alter table review_log enable row level security;
+alter table checkins enable row level security;
+alter table quiz_log enable row level security;
+alter table daily_sessions enable row level security;
+alter table topics enable row level security;
+
+-- 所有人（包括未登录访客）可以查看
+create policy "public read" on words for select using (true);
+create policy "public read" on sentences for select using (true);
+create policy "public read" on review_log for select using (true);
+create policy "public read" on checkins for select using (true);
+create policy "public read" on quiz_log for select using (true);
+create policy "public read" on daily_sessions for select using (true);
+create policy "public read" on topics for select using (true);
+
+-- 只有登录用户（你 + mentor 的账号）可以增删改
+create policy "authenticated write" on words for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on sentences for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on review_log for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on checkins for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on quiz_log for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on daily_sessions for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);
+create policy "authenticated write" on topics for all
+  using (auth.uid() is not null) with check (auth.uid() is not null);

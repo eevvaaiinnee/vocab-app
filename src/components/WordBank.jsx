@@ -2,6 +2,7 @@ import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { getTag } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
+import { useAuth, requireAuth } from '../lib/AuthContext';
 
 const TAG_CLASS = {
   Stranger: 'tag-stranger',
@@ -18,6 +19,7 @@ const SORT_FIELDS = {
 };
 
 export default function WordBank() {
+  const { session } = useAuth();
   const [words, setWords] = useState([]);
   const [topicRows, setTopicRows] = useState([]); // [{id, name}]
   const [filterTopics, setFilterTopics] = useState([]);
@@ -49,10 +51,12 @@ export default function WordBank() {
   }
 
   async function saveSentence(s) {
+    if (!requireAuth(session)) return;
     await supabase.from('sentences').update({ sentence: s.sentence }).eq('id', s.id);
   }
 
   async function deleteSentence(id) {
+    if (!requireAuth(session)) return;
     const ok = window.confirm('Delete this example sentence? This cannot be undone.');
     if (!ok) return;
     await supabase.from('sentences').delete().eq('id', id);
@@ -60,23 +64,27 @@ export default function WordBank() {
   }
 
   async function remove(id) {
+    if (!requireAuth(session)) return;
     if (!confirm('Delete this word? Its example sentences will be deleted too.')) return;
     await supabase.from('words').delete().eq('id', id);
     load();
   }
 
   async function toggleMastered(w) {
+    if (!requireAuth(session)) return;
     const newStatus = w.status === 'mastered' ? 'learning' : 'mastered';
     await supabase.from('words').update({ status: newStatus }).eq('id', w.id);
     load();
   }
 
   async function toggleGeNe(w) {
+    if (!requireAuth(session)) return;
     await supabase.from('words').update({ is_favorite: !w.is_favorite }).eq('id', w.id);
     load();
   }
 
   async function toggleWordTopic(w, topicName) {
+    if (!requireAuth(session)) return;
     const current = w.topics || [];
     const next = current.includes(topicName) ? current.filter((t) => t !== topicName) : [...current, topicName];
     await supabase.from('words').update({ topics: next }).eq('id', w.id);
@@ -85,6 +93,7 @@ export default function WordBank() {
 
   // ===== 主题分类管理（独立于具体单词）=====
   async function addCategory() {
+    if (!requireAuth(session)) return;
     const name = window.prompt('New topic name:');
     if (!name || !name.trim()) return;
     const { error } = await supabase.from('topics').insert({ name: name.trim() });
@@ -93,6 +102,7 @@ export default function WordBank() {
   }
 
   async function renameCategory(t, newName) {
+    if (!requireAuth(session)) { setEditingCategoryId(null); return; }
     setEditingCategoryId(null);
     const trimmed = newName.trim();
     if (!trimmed || trimmed === t.name) return;
@@ -108,6 +118,7 @@ export default function WordBank() {
 
   async function deleteCategory(t, e) {
     e.stopPropagation();
+    if (!requireAuth(session)) return;
     const countInTopic = words.filter((w) => (w.topics || []).includes(t.name)).length;
     const ok = window.confirm(`Delete topic "${t.name}"? It will be removed from ${countInTopic} word(s) (the words themselves are kept).`);
     if (!ok) return;

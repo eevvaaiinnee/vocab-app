@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { demoteAfterQuizFail, computeNextDue } from '../lib/scheduler';
+import { useAuth, requireAuth } from '../lib/AuthContext';
 
 export default function Quiz() {
+  const { session } = useAuth();
   const [count, setCount] = useState(10);
   const [quizWords, setQuizWords] = useState(null);
   const [results, setResults] = useState({});
@@ -38,6 +40,7 @@ export default function Quiz() {
     : 0;
 
   async function submit() {
+    if (!requireAuth(session)) return;
     for (const w of quizWords) {
       if (results[w.id]) {
         await supabase.from('words').update({ next_due_date: computeNextDue({ ...w, status: 'mastered' }) }).eq('id', w.id);
@@ -59,6 +62,7 @@ export default function Quiz() {
   }
 
   async function deleteLogEntry(id) {
+    if (!requireAuth(session)) return;
     const ok = window.confirm('Delete this quiz record? This cannot be undone.');
     if (!ok) return;
     await supabase.from('quiz_log').delete().eq('id', id);
