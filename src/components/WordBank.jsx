@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { getTag } from '../lib/scheduler';
+import { getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 import { useAuth, requireAuth } from '../lib/AuthContext';
 
@@ -80,6 +80,12 @@ export default function WordBank() {
   async function toggleGeNe(w) {
     if (!requireAuth(session)) return;
     await supabase.from('words').update({ is_favorite: !w.is_favorite }).eq('id', w.id);
+    load();
+  }
+
+  async function setExposure(w, newExposure) {
+    if (!requireAuth(session)) return;
+    await supabase.from('words').update({ exposure_count: newExposure }).eq('id', w.id);
     load();
   }
 
@@ -267,15 +273,17 @@ export default function WordBank() {
                   <td>{w.added_date}</td>
                   <td>{w.exposure_count}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                      <button className={`btn ${w.status === 'mastered' ? 'active' : ''}`} onClick={() => toggleMastered(w)}>
-                        {w.status === 'mastered' ? '↩ Unmark Friend' : 'Mark as Friend'}
-                      </button>
-                      <button className={`btn ${w.is_favorite ? 'active' : ''}`} onClick={() => toggleGeNe(w)}>
-                        {w.is_favorite ? '↩ Unmark GeNe' : 'Mark as GeNe'}
-                      </button>
-                      <button className="btn" onClick={() => openSentences(w)}>View Sentences</button>
-                      <button className="btn" onClick={() => remove(w.id)}>Delete</button>
+                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                      <button className={`btn icon ${w.status === 'mastered' ? 'active' : ''}`}
+                        onClick={() => toggleMastered(w)} title={w.status === 'mastered' ? 'Unmark Friend' : 'Mark as Friend'}>🤝</button>
+                      <button className={`btn icon ${w.is_favorite ? 'active' : ''}`}
+                        onClick={() => toggleGeNe(w)} title={w.is_favorite ? 'Unmark GeNe' : 'Mark as GeNe'}>🚩</button>
+                      <button className={`btn icon ${isOneNoodle(w) ? 'active' : ''}`}
+                        onClick={() => setExposure(w, toggleOneNoodleExposure(w))} title={isOneNoodle(w) ? 'Unmark OneNoodle' : 'Mark as OneNoodle'}>🍜</button>
+                      <button className={`btn icon ${isAcquaintance(w) ? 'active' : ''}`}
+                        onClick={() => setExposure(w, toggleAcquaintanceExposure(w))} title={isAcquaintance(w) ? 'Unmark Acquaintance' : 'Mark as Acquaintance'}>👋</button>
+                      <button className="btn icon" onClick={() => openSentences(w)} title="View Sentences">📄</button>
+                      <button className="btn icon" onClick={() => remove(w.id)} title="Delete">🗑️</button>
                     </div>
                   </td>
                 </tr>

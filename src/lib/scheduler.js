@@ -18,6 +18,20 @@ const INTERVALS = {
   quizFailReset: 2,  // quiz 答错后重置间隔
 };
 
+export function isOneNoodle(word) {
+  return word.exposure_count >= 4 && word.exposure_count <= 6;
+}
+export function isAcquaintance(word) {
+  return word.exposure_count >= 7;
+}
+// 点击后应该把 exposure_count 设成多少：命中则回退到上一档，未命中则前进到该档最小值
+export function toggleOneNoodleExposure(word) {
+  return isOneNoodle(word) ? 3 : 4;
+}
+export function toggleAcquaintanceExposure(word) {
+  return isAcquaintance(word) ? 6 : 7;
+}
+
 export function getTag(word) {
   if (word.status === 'mastered') return 'Friend';
   if (word.is_favorite) return 'GeNe';

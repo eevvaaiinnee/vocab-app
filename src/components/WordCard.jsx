@@ -1,4 +1,4 @@
-import { getTag } from '../lib/scheduler';
+import { getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 
 const TAG_CLASS = {
@@ -9,9 +9,11 @@ const TAG_CLASS = {
   Friend: 'tag-friend',
 };
 
-export default function WordCard({ word, sentences, onToggleFavorite, onMarkMastered }) {
+export default function WordCard({ word, sentences, onToggleFavorite, onMarkMastered, onSetExposure }) {
   const tag = getTag(word);
   const isMastered = word.status === 'mastered';
+  const oneNoodleOn = isOneNoodle(word);
+  const acquaintanceOn = isAcquaintance(word);
   return (
     <div className="card">
       <span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span>
@@ -35,6 +37,12 @@ export default function WordCard({ word, sentences, onToggleFavorite, onMarkMast
         </button>
         <button className={`btn ${isMastered ? 'active' : ''}`} onClick={() => onMarkMastered(word)}>
           {isMastered ? '✓ Friend · click to undo' : 'Mark as Friends'}
+        </button>
+        <button className={`btn ${oneNoodleOn ? 'active' : ''}`} onClick={() => onSetExposure(word, toggleOneNoodleExposure(word))}>
+          {oneNoodleOn ? '↩ Unmark OneNoodle' : 'Mark as OneNoodle'}
+        </button>
+        <button className={`btn ${acquaintanceOn ? 'active' : ''}`} onClick={() => onSetExposure(word, toggleAcquaintanceExposure(word))}>
+          {acquaintanceOn ? '↩ Unmark Acquaintance' : 'Mark as Acquaintance'}
         </button>
       </div>
     </div>

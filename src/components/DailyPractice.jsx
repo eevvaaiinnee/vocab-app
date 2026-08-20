@@ -100,6 +100,13 @@ export default function DailyPractice() {
     syncLocal(updated);
   }
 
+  async function setExposure(word, newExposure) {
+    if (!requireAuth(session)) return;
+    const updated = { ...word, exposure_count: newExposure };
+    await supabase.from('words').update({ exposure_count: newExposure }).eq('id', word.id);
+    syncLocal(updated);
+  }
+
   function syncLocal(updated) {
     setAllWords((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
     setPool((prev) => prev.map((w) => (w.id === updated.id ? updated : w)));
@@ -223,6 +230,7 @@ export default function DailyPractice() {
                 sentences={sentencesByWord[activeWord.id] || []}
                 onToggleFavorite={toggleFavorite}
                 onMarkMastered={markMastered}
+                onSetExposure={setExposure}
               />
             </div>
             <div className="flip-nav">

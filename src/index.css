@@ -167,6 +167,12 @@ button.btn.active {
   color: var(--secondary);
 }
 
+button.btn.icon {
+  padding: 5px 8px;
+  font-size: 14px;
+  line-height: 1;
+}
+
 .controls-row {
   display: flex;
   gap: 16px;
