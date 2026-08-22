@@ -63,6 +63,20 @@ export default function WordBank() {
     setModalSentences((prev) => prev.filter((s) => s.id !== id));
   }
 
+  async function addSentence(word) {
+    if (!requireAuth(session)) return;
+    const nextOrder = modalSentences.length
+      ? Math.max(...modalSentences.map((s) => s.order_index)) + 1
+      : 1;
+    const { data, error } = await supabase
+      .from('sentences')
+      .insert({ word_id: word.id, sentence: '', order_index: nextOrder })
+      .select()
+      .single();
+    if (error || !data) return;
+    setModalSentences((prev) => [...prev, data]);
+  }
+
   async function remove(id) {
     if (!requireAuth(session)) return;
     if (!confirm('Delete this word? Its example sentences will be deleted too.')) return;
@@ -314,6 +328,9 @@ export default function WordBank() {
                 </div>
               ))}
               {!modalSentences.length && <p className="hint">No example sentences for this word.</p>}
+              <button className="btn primary" onClick={() => addSentence(viewSentencesWord)} style={{ marginTop: 4 }}>
+                + Add sentence
+              </button>
             </div>
           </div>
         </div>
