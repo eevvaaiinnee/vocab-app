@@ -27,23 +27,12 @@ export default function Checkin() {
     setCounts(c);
   }
 
-  async function addCheckin() {
+  async function checkInToday() {
     if (!requireAuth(session)) return;
+    const ok = window.confirm("Check in for today? This can't be undone.");
+    if (!ok) return;
     await supabase.from('checkins').insert({ date: today });
     setCounts((prev) => ({ ...prev, [today]: (prev[today] || 0) + 1 }));
-  }
-
-  async function undoLastCheckin() {
-    if (!requireAuth(session)) return;
-    const { data } = await supabase
-      .from('checkins')
-      .select('id')
-      .eq('date', today)
-      .order('created_at', { ascending: false })
-      .limit(1);
-    if (!data || !data.length) return;
-    await supabase.from('checkins').delete().eq('id', data[0].id);
-    setCounts((prev) => ({ ...prev, [today]: Math.max(0, (prev[today] || 1) - 1) }));
   }
 
   const weeks = getMonthWeeks(year, month);
@@ -55,7 +44,7 @@ export default function Checkin() {
       <div className="card">
         <h3 style={{ marginTop: 0, marginBottom: 4 }}>{monthLabel}</h3>
         <p className="hint" style={{ marginBottom: 16 }}>
-          A week turns green once you've checked in 5+ days. All dates and times are US Mountain Time. Click today's box to check in — you can check in more than once a day.
+          A week turns green once you've checked in 5+ days. All dates and times are US Mountain Time. Click today's box to check in — you can check in more than once a day, and each check-in adds a checkmark. This can't be undone, so you'll be asked to confirm first.
         </p>
         <div className="calendar-weekday-row">
           {WEEKDAY_LABELS.map((d) => <span key={d}>{d}</span>)}
@@ -84,10 +73,13 @@ export default function Checkin() {
                 if (isToday) cls += ' today clickable';
 
                 return (
-                  <div key={d} className={cls} onClick={isToday ? addCheckin : undefined}>
-                    {isChecked && !isFuture ? <span className="calendar-check-icon">✓</span> : null}
-                    <span style={{ position: 'relative', zIndex: 1 }}>{dayNum}</span>
-                    {count > 1 && <span className="calendar-count-badge">{count}</span>}
+                  <div key={d} className={cls} onClick={isToday ? checkInToday : undefined}>
+                    <span className="calendar-day-num">{dayNum}</span>
+                    {count > 0 && (
+                      <span className="calendar-checkmarks">
+                        {Array.from({ length: count }).map((_, i) => <span key={i}>✓</span>)}
+                      </span>
+                    )}
                   </div>
                 );
               })}
@@ -98,8 +90,7 @@ export default function Checkin() {
 
       <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <span className="hint">Today: {todayCount} check-in{todayCount === 1 ? '' : 's'}</span>
-        <button className="btn primary" onClick={addCheckin}>Check in</button>
-        {todayCount > 0 && <button className="btn" onClick={undoLastCheckin}>Undo last check-in</button>}
+        <button className="btn primary" onClick={checkInToday}>Check in</button>
       </div>
     </div>
   );
