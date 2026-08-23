@@ -500,3 +500,15 @@ th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
   transform: rotate(-12deg);
   pointer-events: none;
 }
+.calendar-count-badge {
+  position: absolute;
+  bottom: 2px;
+  right: 2px;
+  font-size: 9px;
+  font-weight: 700;
+  background: var(--primary);
+  color: white;
+  border-radius: 8px;
+  padding: 0 4px;
+  z-index: 2;
+}
