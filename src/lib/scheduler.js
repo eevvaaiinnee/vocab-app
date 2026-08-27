@@ -84,10 +84,21 @@ export function buildDailyPool(allWords, opts) {
 
   const inTopic = (w) => !topics || topics.length === 0 || (w.topics || []).some((t) => topics.includes(t));
 
-  const favoritePool = allWords.filter((w) => w.is_favorite && inTopic(w));
+  // 只有"到期"的GeNe词才会被强制插入（GeNe只是间隔减半，不是无视调度）
+  const favoritesDue = allWords
+    .filter((w) => w.is_favorite && w.status !== 'mastered' && w.next_due_date <= today && inTopic(w))
+    .sort((a, b) => (a.next_due_date < b.next_due_date ? -1 : 1));
+
+  // 强制插入的GeNe词最多占当天名额的一半，避免GeNe词数量一多就把新词/复习词全部挤掉
+  const favoriteCap = Math.max(1, Math.ceil(count / 2));
+  const forcedFavorites = favoritesDue.slice(0, favoriteCap);
+  const forcedIds = new Set(forcedFavorites.map((w) => w.id));
+  // 没被强制选中的到期GeNe词，并入常规复习池按到期日期正常排队，不会被漏掉
+  const leftoverFavorites = favoritesDue.slice(favoriteCap);
 
   const oldPool = allWords
     .filter((w) => w.exposure_count > 0 && w.status !== 'mastered' && !w.is_favorite && w.next_due_date <= today && inTopic(w))
+    .concat(leftoverFavorites)
     .sort((a, b) => (a.next_due_date < b.next_due_date ? -1 : 1));
 
   const masteredDue = allWords
@@ -103,7 +114,7 @@ export function buildDailyPool(allWords, opts) {
   const targetNew = Math.round(count * newRatio);
   const targetOld = count - targetNew;
 
-  const result = [...favoritePool];
+  const result = [...forcedFavorites];
   const remaining = count - result.length;
   if (remaining <= 0) return result.slice(0, count);
 
