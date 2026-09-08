@@ -28,6 +28,7 @@ export default function WordBank() {
   const [sortDir, setSortDir] = useState('asc');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingWordTopicsId, setEditingWordTopicsId] = useState(null);
+  const [editingField, setEditingField] = useState(null); // `${wordId}:term` or `${wordId}:meaning`
   const [viewSentencesWord, setViewSentencesWord] = useState(null);
   const [modalSentences, setModalSentences] = useState([]);
 
@@ -75,6 +76,15 @@ export default function WordBank() {
       .single();
     if (error || !data) return;
     setModalSentences((prev) => [...prev, data]);
+  }
+
+  async function saveWordField(w, field, value) {
+    setEditingField(null);
+    if (!requireAuth(session)) return;
+    const trimmed = value.trim();
+    if (!trimmed || trimmed === w[field]) return;
+    await supabase.from('words').update({ [field]: trimmed }).eq('id', w.id);
+    load();
   }
 
   async function remove(id) {
@@ -257,8 +267,46 @@ export default function WordBank() {
               const tag = getTag(w);
               return (
                 <tr key={w.id}>
-                  <td><span className="word-highlight">{w.term}</span></td>
-                  <td>{w.chinese_meaning}</td>
+                  <td>
+                    {editingField === `${w.id}:term` ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        defaultValue={w.term}
+                        style={{ width: 140 }}
+                        onBlur={(e) => saveWordField(w, 'term', e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveWordField(w, 'term', e.target.value);
+                          if (e.key === 'Escape') setEditingField(null);
+                        }}
+                      />
+                    ) : (
+                      <span className="word-highlight" style={{ cursor: 'pointer' }}
+                        onClick={() => setEditingField(`${w.id}:term`)} title="Click to edit">
+                        {w.term}
+                      </span>
+                    )}
+                  </td>
+                  <td>
+                    {editingField === `${w.id}:chinese_meaning` ? (
+                      <input
+                        type="text"
+                        autoFocus
+                        defaultValue={w.chinese_meaning}
+                        style={{ width: 160 }}
+                        onBlur={(e) => saveWordField(w, 'chinese_meaning', e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') saveWordField(w, 'chinese_meaning', e.target.value);
+                          if (e.key === 'Escape') setEditingField(null);
+                        }}
+                      />
+                    ) : (
+                      <span style={{ cursor: 'pointer' }}
+                        onClick={() => setEditingField(`${w.id}:chinese_meaning`)} title="Click to edit">
+                        {w.chinese_meaning || <span className="hint">(click to add meaning)</span>}
+                      </span>
+                    )}
+                  </td>
                   <td>
                     {(w.topics || []).map((t) => {
                       const c = topicColor(t);
