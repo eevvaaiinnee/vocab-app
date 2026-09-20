@@ -9,6 +9,7 @@ const WEEKDAY_LABELS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
 export default function Checkin() {
   const { session } = useAuth();
   const [counts, setCounts] = useState({}); // date -> number of check-ins that day
+  const [pickerDate, setPickerDate] = useState(null);
   const { year, month } = getMountainParts();
   const today = localDateStr();
 
@@ -27,24 +28,36 @@ export default function Checkin() {
     setCounts(c);
   }
 
-  async function checkInToday() {
+  async function addCheckin(date) {
     if (!requireAuth(session)) return;
-    const ok = window.confirm("Check in for today? This can't be undone.");
-    if (!ok) return;
-    await supabase.from('checkins').insert({ date: today });
-    setCounts((prev) => ({ ...prev, [today]: (prev[today] || 0) + 1 }));
+    await supabase.from('checkins').insert({ date });
+    setCounts((prev) => ({ ...prev, [date]: (prev[date] || 0) + 1 }));
+  }
+
+  async function removeCheckin(date) {
+    if (!requireAuth(session)) return;
+    const current = counts[date] || 0;
+    if (current <= 0) return;
+    const { data } = await supabase
+      .from('checkins')
+      .select('id')
+      .eq('date', date)
+      .order('created_at', { ascending: false })
+      .limit(1);
+    if (!data || !data.length) return;
+    await supabase.from('checkins').delete().eq('id', data[0].id);
+    setCounts((prev) => ({ ...prev, [date]: Math.max(0, current - 1) }));
   }
 
   const weeks = getMonthWeeks(year, month);
   const monthLabel = new Date(year, month, 1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-  const todayCount = counts[today] || 0;
 
   return (
     <div>
       <div className="card">
         <h3 style={{ marginTop: 0, marginBottom: 4 }}>{monthLabel}</h3>
         <p className="hint" style={{ marginBottom: 16 }}>
-          A week turns green once you've checked in 5+ days. All dates and times are US Mountain Time. Click today's box to check in — you can check in more than once a day, and each check-in adds a checkmark. This can't be undone, so you'll be asked to confirm first.
+          A week turns green once you've checked in 5+ days. All dates and times are US Mountain Time. Click any day to open it and adjust its check-in count with + / −.
         </p>
         <div className="calendar-weekday-row">
           {WEEKDAY_LABELS.map((d) => <span key={d}>{d}</span>)}
@@ -70,10 +83,11 @@ export default function Checkin() {
                 if (isFuture) cls += ' future';
                 else if (isChecked) cls += ' checked';
                 else if (d < today) cls += ' past-unchecked';
-                if (isToday) cls += ' today clickable';
+                if (isToday) cls += ' today';
+                if (!isFuture) cls += ' clickable';
 
                 return (
-                  <div key={d} className={cls} onClick={isToday ? checkInToday : undefined}>
+                  <div key={d} className={cls} onClick={!isFuture ? () => setPickerDate(d) : undefined}>
                     <span className="calendar-day-num">{dayNum}</span>
                     {count > 0 && (
                       <span className="calendar-checkmarks">
@@ -88,10 +102,22 @@ export default function Checkin() {
         })}
       </div>
 
-      <div className="card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-        <span className="hint">Today: {todayCount} check-in{todayCount === 1 ? '' : 's'}</span>
-        <button className="btn primary" onClick={checkInToday}>Check in</button>
-      </div>
+      {pickerDate && (
+        <div className="modal-overlay" onClick={() => setPickerDate(null)}>
+          <div className="modal-box" style={{ maxWidth: 320 }} onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <strong style={{ fontSize: 15 }}>{pickerDate}{pickerDate === today ? ' (today)' : ''}</strong>
+              <button className="modal-close" onClick={() => setPickerDate(null)}>✕</button>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 18 }}>
+              <button className="flip-arrow" onClick={() => removeCheckin(pickerDate)} disabled={!counts[pickerDate]}>−</button>
+              <span style={{ fontSize: 28, fontWeight: 800, minWidth: 40, textAlign: 'center' }}>{counts[pickerDate] || 0}</span>
+              <button className="flip-arrow" onClick={() => addCheckin(pickerDate)}>+</button>
+            </div>
+            <p className="hint" style={{ textAlign: 'center', marginTop: 12 }}>check-in{counts[pickerDate] === 1 ? '' : 's'} on this day</p>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

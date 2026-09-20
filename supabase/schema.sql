@@ -10,6 +10,7 @@ create table words (
   id               uuid primary key default uuid_generate_v4(),
   term             text not null,
   chinese_meaning  text not null default '',
+  relatives        text not null default '',
   topic            text not null default '未分类',
   topics           text[] not null default '{}',
   added_date       date not null default current_date,

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth, requireAuth } from '../lib/AuthContext';
 
-const emptyEntry = () => ({ term: '', chinese_meaning: '', sentences: ['', '', '', '', ''] });
+const emptyEntry = () => ({ term: '', chinese_meaning: '', relatives: '', sentences: ['', '', '', '', ''] });
 
 export default function AddWords() {
   const { session } = useAuth();
@@ -44,6 +44,7 @@ export default function AddWords() {
         .insert({
           term: e.term.trim(),
           chinese_meaning: e.chinese_meaning.trim(),
+          relatives: e.relatives.trim(),
           topics: [topicName],
         })
         .select()
@@ -82,6 +83,8 @@ export default function AddWords() {
           </div>
           <input type="text" className="input-bold input-uniform" placeholder="Meaning" style={{ marginBottom: 16 }}
             value={e.chinese_meaning} onChange={(ev) => updateEntry(idx, 'chinese_meaning', ev.target.value)} />
+          <input type="text" className="input-bold input-uniform" placeholder="Relatives (related words, roots, etc.)" style={{ marginBottom: 16 }}
+            value={e.relatives} onChange={(ev) => updateEntry(idx, 'relatives', ev.target.value)} />
           {e.sentences.map((s, sIdx) => (
             <input key={sIdx} type="text" className="input-bold" placeholder={`Example sentence ${sIdx + 1}`}
               style={{ width: '100%', marginBottom: 10 }}

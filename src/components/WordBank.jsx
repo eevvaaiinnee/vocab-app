@@ -28,9 +28,8 @@ export default function WordBank() {
   const [sortDir, setSortDir] = useState('asc');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
   const [editingWordTopicsId, setEditingWordTopicsId] = useState(null);
-  const [editingField, setEditingField] = useState(null); // `${wordId}:term` or `${wordId}:meaning`
-  const [viewSentencesWord, setViewSentencesWord] = useState(null);
-  const [modalSentences, setModalSentences] = useState([]);
+  const [editWord, setEditWord] = useState(null);
+  const [editSentences, setEditSentences] = useState([]);
 
   useEffect(() => { load(); }, []);
 
@@ -41,14 +40,28 @@ export default function WordBank() {
     setTopicRows(t || []);
   }
 
-  async function openSentences(w) {
+  async function openEdit(w) {
     const { data } = await supabase.from('sentences').select('*').eq('word_id', w.id).order('order_index');
-    setModalSentences(data || []);
-    setViewSentencesWord(w);
+    setEditSentences(data || []);
+    setEditWord(w);
+  }
+
+  function closeEdit() {
+    setEditWord(null);
+    load();
+  }
+
+  function updateEditWordField(field, value) {
+    setEditWord((prev) => ({ ...prev, [field]: value }));
+  }
+
+  async function saveEditWordField(field, value) {
+    if (!requireAuth(session)) return;
+    await supabase.from('words').update({ [field]: value.trim() }).eq('id', editWord.id);
   }
 
   async function updateSentenceText(id, text) {
-    setModalSentences((prev) => prev.map((s) => (s.id === id ? { ...s, sentence: text } : s)));
+    setEditSentences((prev) => prev.map((s) => (s.id === id ? { ...s, sentence: text } : s)));
   }
 
   async function saveSentence(s) {
@@ -61,30 +74,21 @@ export default function WordBank() {
     const ok = window.confirm('Delete this example sentence? This cannot be undone.');
     if (!ok) return;
     await supabase.from('sentences').delete().eq('id', id);
-    setModalSentences((prev) => prev.filter((s) => s.id !== id));
+    setEditSentences((prev) => prev.filter((s) => s.id !== id));
   }
 
-  async function addSentence(word) {
+  async function addSentence() {
     if (!requireAuth(session)) return;
-    const nextOrder = modalSentences.length
-      ? Math.max(...modalSentences.map((s) => s.order_index)) + 1
+    const nextOrder = editSentences.length
+      ? Math.max(...editSentences.map((s) => s.order_index)) + 1
       : 1;
     const { data, error } = await supabase
       .from('sentences')
-      .insert({ word_id: word.id, sentence: '', order_index: nextOrder })
+      .insert({ word_id: editWord.id, sentence: '', order_index: nextOrder })
       .select()
       .single();
     if (error || !data) return;
-    setModalSentences((prev) => [...prev, data]);
-  }
-
-  async function saveWordField(w, field, value) {
-    setEditingField(null);
-    if (!requireAuth(session)) return;
-    const trimmed = value.trim();
-    if (!trimmed || trimmed === w[field]) return;
-    await supabase.from('words').update({ [field]: trimmed }).eq('id', w.id);
-    load();
+    setEditSentences((prev) => [...prev, data]);
   }
 
   async function remove(id) {
@@ -255,6 +259,7 @@ export default function WordBank() {
             <tr style={{ fontSize: 15, fontWeight: 700 }}>
               <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
               <th>Meaning</th>
+              <th>Relatives</th>
               <th>Topics</th>
               <th>Tag</th>
               <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
@@ -267,46 +272,9 @@ export default function WordBank() {
               const tag = getTag(w);
               return (
                 <tr key={w.id}>
-                  <td>
-                    {editingField === `${w.id}:term` ? (
-                      <input
-                        type="text"
-                        autoFocus
-                        defaultValue={w.term}
-                        style={{ width: 140 }}
-                        onBlur={(e) => saveWordField(w, 'term', e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveWordField(w, 'term', e.target.value);
-                          if (e.key === 'Escape') setEditingField(null);
-                        }}
-                      />
-                    ) : (
-                      <span className="word-highlight" style={{ cursor: 'pointer' }}
-                        onClick={() => setEditingField(`${w.id}:term`)} title="Click to edit">
-                        {w.term}
-                      </span>
-                    )}
-                  </td>
-                  <td>
-                    {editingField === `${w.id}:chinese_meaning` ? (
-                      <input
-                        type="text"
-                        autoFocus
-                        defaultValue={w.chinese_meaning}
-                        style={{ width: 160 }}
-                        onBlur={(e) => saveWordField(w, 'chinese_meaning', e.target.value)}
-                        onKeyDown={(e) => {
-                          if (e.key === 'Enter') saveWordField(w, 'chinese_meaning', e.target.value);
-                          if (e.key === 'Escape') setEditingField(null);
-                        }}
-                      />
-                    ) : (
-                      <span style={{ cursor: 'pointer' }}
-                        onClick={() => setEditingField(`${w.id}:chinese_meaning`)} title="Click to edit">
-                        {w.chinese_meaning || <span className="hint">(click to add meaning)</span>}
-                      </span>
-                    )}
-                  </td>
+                  <td><span className="word-highlight">{w.term}</span></td>
+                  <td>{w.chinese_meaning}</td>
+                  <td>{w.relatives}</td>
                   <td>
                     {(w.topics || []).map((t) => {
                       const c = topicColor(t);
@@ -344,7 +312,7 @@ export default function WordBank() {
                         onClick={() => setExposure(w, toggleOneNoodleExposure(w))} title={isOneNoodle(w) ? 'Unmark OneNoodle' : 'Mark as OneNoodle'}>🍜</button>
                       <button className={`btn icon ${isAcquaintance(w) ? 'active' : ''}`}
                         onClick={() => setExposure(w, toggleAcquaintanceExposure(w))} title={isAcquaintance(w) ? 'Unmark Acquaintance' : 'Mark as Acquaintance'}>👋</button>
-                      <button className="btn icon" onClick={() => openSentences(w)} title="View Sentences">📄</button>
+                      <button className="btn icon" onClick={() => openEdit(w)} title="Edit">📝</button>
                       <button className="btn icon" onClick={() => remove(w.id)} title="Delete">🗑️</button>
                     </div>
                   </td>
@@ -355,15 +323,46 @@ export default function WordBank() {
         </table>
       </div>
 
-      {viewSentencesWord && (
-        <div className="modal-overlay" onClick={() => setViewSentencesWord(null)}>
+      {editWord && (
+        <div className="modal-overlay" onClick={closeEdit}>
           <div className="modal-box" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
-              <strong style={{ fontSize: 15 }}>Sentences for "{viewSentencesWord.term}"</strong>
-              <button className="modal-close" onClick={() => setViewSentencesWord(null)}>✕</button>
+              <strong style={{ fontSize: 15 }}>Edit "{editWord.term}"</strong>
+              <button className="modal-close" onClick={closeEdit}>✕</button>
             </div>
             <div className="modal-scroll-body">
-              {modalSentences.map((s) => (
+              <div style={{ marginBottom: 14 }}>
+                <div className="params-field-label" style={{ marginBottom: 6 }}>Word</div>
+                <input
+                  type="text"
+                  className="input-bold"
+                  value={editWord.term}
+                  onChange={(e) => updateEditWordField('term', e.target.value)}
+                  onBlur={(e) => saveEditWordField('term', e.target.value)}
+                />
+              </div>
+              <div style={{ marginBottom: 14 }}>
+                <div className="params-field-label" style={{ marginBottom: 6 }}>Meaning</div>
+                <input
+                  type="text"
+                  className="input-bold"
+                  value={editWord.chinese_meaning}
+                  onChange={(e) => updateEditWordField('chinese_meaning', e.target.value)}
+                  onBlur={(e) => saveEditWordField('chinese_meaning', e.target.value)}
+                />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <div className="params-field-label" style={{ marginBottom: 6 }}>Relatives</div>
+                <input
+                  type="text"
+                  className="input-bold"
+                  value={editWord.relatives || ''}
+                  onChange={(e) => updateEditWordField('relatives', e.target.value)}
+                  onBlur={(e) => saveEditWordField('relatives', e.target.value)}
+                />
+              </div>
+              <div className="params-field-label" style={{ marginBottom: 6 }}>Example sentences</div>
+              {editSentences.map((s) => (
                 <div key={s.id} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 10 }}>
                   <input
                     type="text"
@@ -375,8 +374,8 @@ export default function WordBank() {
                   <button className="btn" onClick={() => deleteSentence(s.id)}>Delete</button>
                 </div>
               ))}
-              {!modalSentences.length && <p className="hint">No example sentences for this word.</p>}
-              <button className="btn primary" onClick={() => addSentence(viewSentencesWord)} style={{ marginTop: 4 }}>
+              {!editSentences.length && <p className="hint">No example sentences for this word.</p>}
+              <button className="btn primary" onClick={addSentence} style={{ marginTop: 4 }}>
                 + Add sentence
               </button>
             </div>
