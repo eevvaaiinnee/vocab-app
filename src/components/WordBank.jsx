@@ -27,7 +27,6 @@ export default function WordBank() {
   const [sortField, setSortField] = useState('term');
   const [sortDir, setSortDir] = useState('asc');
   const [editingCategoryId, setEditingCategoryId] = useState(null);
-  const [editingWordTopicsId, setEditingWordTopicsId] = useState(null);
   const [editWord, setEditWord] = useState(null);
   const [editSentences, setEditSentences] = useState([]);
 
@@ -117,12 +116,13 @@ export default function WordBank() {
     load();
   }
 
-  async function toggleWordTopic(w, topicName) {
+  async function toggleWordTopic(topicName) {
     if (!requireAuth(session)) return;
-    const current = w.topics || [];
+    const current = editWord.topics || [];
     const next = current.includes(topicName) ? current.filter((t) => t !== topicName) : [...current, topicName];
-    await supabase.from('words').update({ topics: next }).eq('id', w.id);
-    setWords((prev) => prev.map((x) => (x.id === w.id ? { ...x, topics: next } : x)));
+    await supabase.from('words').update({ topics: next }).eq('id', editWord.id);
+    setEditWord((prev) => ({ ...prev, topics: next }));
+    setWords((prev) => prev.map((x) => (x.id === editWord.id ? { ...x, topics: next } : x)));
   }
 
   // ===== 主题分类管理（独立于具体单词）=====
@@ -166,7 +166,13 @@ export default function WordBank() {
     load();
   }
 
-  const allTags = ['Stranger', 'OneNoodle', 'Acquaintance', 'GeNe', 'Friend'];
+  const allTags = [
+    { name: 'Stranger', desc: 'Just added — shown 1 to 3 times so far' },
+    { name: 'OneNoodle', desc: 'Shown 4 to 6 times' },
+    { name: 'Acquaintance', desc: 'Shown 7 or more times' },
+    { name: 'GeNe', desc: 'Manually flagged for extra-frequent review' },
+    { name: 'Friend', desc: 'Marked as mastered' },
+  ];
 
   function toggleFilter(list, setList, val) {
     setList((prev) => (prev.includes(val) ? prev.filter((x) => x !== val) : [...prev, val]));
@@ -240,9 +246,9 @@ export default function WordBank() {
             <span className="params-field-label">Filter by Tag</span>
             <div className="pill-group">
               {allTags.map((t) => (
-                <button key={t} className={`pill ${filterTags.includes(t) ? 'selected' : ''}`}
-                  onClick={() => toggleFilter(filterTags, setFilterTags, t)}>
-                  {t}
+                <button key={t.name} className={`pill ${filterTags.includes(t.name) ? 'selected' : ''}`}
+                  onClick={() => toggleFilter(filterTags, setFilterTags, t.name)} title={t.desc}>
+                  {t.name}
                 </button>
               ))}
             </div>
@@ -280,30 +286,12 @@ export default function WordBank() {
                       const c = topicColor(t);
                       return <span key={t} className="topic-pill" style={{ background: c.bg, color: c.text, marginBottom: 3 }}>{t}</span>;
                     })}
-                    {editingWordTopicsId === w.id ? (
-                      <div className="card" style={{ marginTop: 6, padding: 10 }}>
-                        <div className="pill-group">
-                          {topicRows.map((t) => {
-                            const on = (w.topics || []).includes(t.name);
-                            return (
-                              <button key={t.id} className={`pill ${on ? 'selected' : ''}`}
-                                onClick={() => toggleWordTopic(w, t.name)}>
-                                {t.name}
-                              </button>
-                            );
-                          })}
-                        </div>
-                        <button className="btn" style={{ marginTop: 8 }} onClick={() => setEditingWordTopicsId(null)}>Done</button>
-                      </div>
-                    ) : (
-                      <button className="pill" onClick={() => setEditingWordTopicsId(w.id)}>+ Edit topics</button>
-                    )}
                   </td>
                   <td><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>
                   <td>{w.added_date}</td>
                   <td>{w.exposure_count}</td>
                   <td>
-                    <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: 4, width: 'fit-content' }}>
                       <button className={`btn icon ${w.status === 'mastered' ? 'active' : ''}`}
                         onClick={() => toggleMastered(w)} title={w.status === 'mastered' ? 'Unmark Friend' : 'Mark as Friend'}>🤝</button>
                       <button className={`btn icon ${w.is_favorite ? 'active' : ''}`}
@@ -360,6 +348,20 @@ export default function WordBank() {
                   onChange={(e) => updateEditWordField('relatives', e.target.value)}
                   onBlur={(e) => saveEditWordField('relatives', e.target.value)}
                 />
+              </div>
+              <div style={{ marginBottom: 18 }}>
+                <div className="params-field-label" style={{ marginBottom: 6 }}>Topics</div>
+                <div className="pill-group">
+                  {topicRows.map((t) => {
+                    const on = (editWord.topics || []).includes(t.name);
+                    return (
+                      <button key={t.id} className={`pill ${on ? 'selected' : ''}`}
+                        onClick={() => toggleWordTopic(t.name)}>
+                        {t.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
               <div className="params-field-label" style={{ marginBottom: 6 }}>Example sentences</div>
               {editSentences.map((s) => (

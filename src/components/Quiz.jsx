@@ -1,6 +1,6 @@
 import { useEffect, useState, useMemo } from 'react';
 import { supabase } from '../lib/supabaseClient';
-import { demoteAfterQuizFail, computeNextDue } from '../lib/scheduler';
+import { demoteAfterQuizFail, computeNextDue, getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { localDateStr } from '../lib/dateUtils';
 import { useAuth, requireAuth } from '../lib/AuthContext';
 
@@ -53,6 +53,30 @@ export default function Quiz() {
 
   function toggle(id) {
     setResults((prev) => ({ ...prev, [id]: !prev[id] }));
+  }
+
+  function updateQuizWordLocal(id, patch) {
+    setQuizWords((prev) => prev.map((w) => (w.id === id ? { ...w, ...patch } : w)));
+  }
+
+  async function toggleGeNeQuiz(w) {
+    if (!requireAuth(session)) return;
+    const next = !w.is_favorite;
+    await supabase.from('words').update({ is_favorite: next }).eq('id', w.id);
+    updateQuizWordLocal(w.id, { is_favorite: next });
+  }
+
+  async function toggleMasteredQuiz(w) {
+    if (!requireAuth(session)) return;
+    const next = w.status === 'mastered' ? 'learning' : 'mastered';
+    await supabase.from('words').update({ status: next }).eq('id', w.id);
+    updateQuizWordLocal(w.id, { status: next });
+  }
+
+  async function setExposureQuiz(w, newExposure) {
+    if (!requireAuth(session)) return;
+    await supabase.from('words').update({ exposure_count: newExposure }).eq('id', w.id);
+    updateQuizWordLocal(w.id, { exposure_count: newExposure });
   }
 
   const computedAccuracy = quizWords && quizWords.length
@@ -111,7 +135,7 @@ export default function Quiz() {
               <input type="range" className="slider-secondary" min="0" max="1" step="0.1" value={friendRatio}
                 onChange={(e) => setFriendRatio(Number(e.target.value))} />
               <p className="hint" style={{ marginTop: 2 }}>
-                The rest is drawn from OneNoodle/Acquaintance words (words with a few exposures but not yet mastered).
+                The rest is drawn from OneNoodle/Acquaintance.
               </p>
             </div>
           </div>
@@ -127,13 +151,23 @@ export default function Quiz() {
       {quizWords && !submitted && (
         <div className="card">
           <p className="hint" style={{ marginBottom: 12 }}>
-            These words were randomly selected — quiz yourself off-screen (e.g. have your mentor test you out loud). When you're done, come back and uncheck any words you got wrong.
+            Quizzes take place off-screen. When you're done, come back and uncheck any words you got wrong and mark words as Friends/Acquaintance/OneNoodle/GeNe accordingly.
           </p>
           {quizWords.map((w) => (
-            <label key={w.id} style={{ display: 'block', marginBottom: 8 }}>
-              <input type="checkbox" checked={!!results[w.id]} onChange={() => toggle(w.id)} />{' '}
-              {w.term}
-            </label>
+            <div key={w.id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+              <label style={{ flex: 1 }}>
+                <input type="checkbox" checked={!!results[w.id]} onChange={() => toggle(w.id)} />{' '}
+                {w.term} <span className="hint">({getTag(w)})</span>
+              </label>
+              <button className={`btn icon ${w.status === 'mastered' ? 'active' : ''}`}
+                onClick={() => toggleMasteredQuiz(w)} title={w.status === 'mastered' ? 'Unmark Friend' : 'Mark as Friend'}>🤝</button>
+              <button className={`btn icon ${w.is_favorite ? 'active' : ''}`}
+                onClick={() => toggleGeNeQuiz(w)} title={w.is_favorite ? 'Unmark GeNe' : 'Mark as GeNe'}>🚩</button>
+              <button className={`btn icon ${isOneNoodle(w) ? 'active' : ''}`}
+                onClick={() => setExposureQuiz(w, toggleOneNoodleExposure(w))} title={isOneNoodle(w) ? 'Unmark OneNoodle' : 'Mark as OneNoodle'}>🍜</button>
+              <button className={`btn icon ${isAcquaintance(w) ? 'active' : ''}`}
+                onClick={() => setExposureQuiz(w, toggleAcquaintanceExposure(w))} title={isAcquaintance(w) ? 'Unmark Acquaintance' : 'Mark as Acquaintance'}>👋</button>
+            </div>
           ))}
           <div style={{ marginTop: 16, display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
             <label className="hint" style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
