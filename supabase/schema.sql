@@ -37,12 +37,11 @@ create table review_log (
   shown_date  date not null default current_date
 );
 
--- 签到记录：一天可以有多条（支持每天多次签到），created_at 用于"撤销最近一次"
+-- 签到记录：每天一行，记录这一天学习的单词数（可以在Weekly Check-in页面手动+/-调整）
 create table checkins (
-  id         uuid primary key default uuid_generate_v4(),
-  date       date not null,
-  success    boolean not null default true,
-  created_at timestamptz not null default now()
+  id            uuid primary key default uuid_generate_v4(),
+  date          date not null unique,
+  words_learned int not null default 0
 );
 
 -- 主题分类表（独立管理：新建/改名/删除，不依赖words里现有数据）

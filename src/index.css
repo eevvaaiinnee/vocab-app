@@ -489,6 +489,7 @@ th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
 .calendar-day.empty { background: transparent; }
 .calendar-day.future { color: var(--ink-faint); background: var(--grey-week); }
 .calendar-day.past-unchecked { color: var(--rose); background: rgba(255,255,255,0.4); }
+.calendar-day.partial { color: var(--secondary); background: var(--secondary-soft); }
 .calendar-day.checked .calendar-day-num { color: var(--primary); }
 .calendar-day.today { border: 1.5px solid var(--ink); }
 .calendar-day.today.checked { background: var(--green-week); }

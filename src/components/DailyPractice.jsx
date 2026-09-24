@@ -13,7 +13,8 @@ export default function DailyPractice() {
   const [allWords, setAllWords] = useState([]);
   const [sentencesByWord, setSentencesByWord] = useState({});
   const [topics, setTopics] = useState([]);
-  const [count, setCount] = useState(20);
+  const [count, setCount] = useState(10);
+  const [useCustomCount, setUseCustomCount] = useState(false);
   const [ratio, setRatio] = useState(0.5);
   const [selectedTopics, setSelectedTopics] = useState([]);
   const [pool, setPool] = useState([]);
@@ -135,9 +136,27 @@ export default function DailyPractice() {
         <div className="params-row">
           <div className="params-field">
             <span className="params-field-label">Count</span>
-            <select value={count} onChange={(e) => setCount(Number(e.target.value))}>
-              {[10, 15, 20, 25, 30].map((n) => <option key={n} value={n}>{n}</option>)}
+            <select
+              value={useCustomCount ? 'custom' : count}
+              onChange={(e) => {
+                if (e.target.value === 'custom') { setUseCustomCount(true); }
+                else { setUseCustomCount(false); setCount(Number(e.target.value)); }
+              }}
+            >
+              {[3, 4, 5, 10].map((n) => <option key={n} value={n}>{n}</option>)}
+              <option value="custom">Custom…</option>
             </select>
+            {useCustomCount && (
+              <input
+                type="number"
+                min="1"
+                className="input-bold"
+                style={{ width: 80, marginTop: 6 }}
+                placeholder="Enter number"
+                value={count || ''}
+                onChange={(e) => setCount(Number(e.target.value) || 0)}
+              />
+            )}
           </div>
           <div className="params-field" style={{ flex: 1, minWidth: 220 }}>
             <span className="params-field-label">Topics</span>
