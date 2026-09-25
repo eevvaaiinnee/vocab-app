@@ -37,11 +37,13 @@ create table review_log (
   shown_date  date not null default current_date
 );
 
--- 签到记录：每天一行，记录这一天学习的单词数（可以在Weekly Check-in页面手动+/-调整）
+-- 签到记录：每天一行。words_learned 决定这天是否"达标"(>=10计入周)，
+-- checkin_count 只是"签到次数"，只影响日历格子里显示几个勾号，两者互不影响
 create table checkins (
   id            uuid primary key default uuid_generate_v4(),
   date          date not null unique,
-  words_learned int not null default 0
+  words_learned int not null default 0,
+  checkin_count int not null default 0
 );
 
 -- 主题分类表（独立管理：新建/改名/删除，不依赖words里现有数据）
