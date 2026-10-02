@@ -250,6 +250,16 @@ input.input-bold::placeholder {
 }
 .input-uniform { max-width: 480px; display: block; }
 
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
 input[type="range"] {
   width: 100%;
   max-width: 320px;
@@ -307,6 +317,7 @@ th { color: var(--ink-soft); font-weight: 600; }
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { color: var(--primary); }
 th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
+th.nowrap-col, td.nowrap-col { white-space: nowrap; width: 1%; }
 
 .hint { font-size: 12px; color: var(--ink-soft); }
 .word-highlight {
@@ -518,19 +529,13 @@ th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
 .calendar-day.future { color: var(--ink-faint); background: var(--grey-week); }
 .calendar-day.past-unchecked { color: var(--rose); background: rgba(255,255,255,0.4); }
 .calendar-day.partial { color: var(--secondary); background: var(--secondary-soft); }
-.calendar-day.checked .calendar-day-num { color: var(--primary); }
 .calendar-day.today { border: 1.5px solid var(--ink); }
 .calendar-day.today.checked { background: var(--green-week); }
 .calendar-day.today:not(.checked) { background: var(--grey-week); }
 .calendar-day.clickable { cursor: pointer; }
-.calendar-checkmarks {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 1px;
-  font-size: 15px;
-  font-weight: 700;
+.calendar-check-icon {
+  font-size: 13px;
+  font-weight: 800;
   line-height: 1;
   color: var(--primary);
-  max-width: 100%;
 }

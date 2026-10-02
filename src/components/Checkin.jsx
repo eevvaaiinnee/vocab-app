@@ -83,8 +83,8 @@ export default function Checkin() {
 
                 return (
                   <div key={d} className={cls} onClick={!isFuture ? () => openPicker(d) : undefined}>
+                    <span className="calendar-day-num">{dayNum}</span>
                     {isDone && <span className="calendar-check-icon">✓</span>}
-                    <span className="calendar-day-num" style={{ position: 'relative', zIndex: 1 }}>{dayNum}</span>
                   </div>
                 );
               })}
@@ -106,7 +106,7 @@ export default function Checkin() {
               type="number"
               min="0"
               className="input-bold"
-              style={{ width: 100, textAlign: 'center', fontSize: 20, fontWeight: 800, marginBottom: 18 }}
+              style={{ width: 100, textAlign: 'center', fontSize: 20, fontWeight: 800, marginBottom: 18, display: 'block', margin: '0 auto 18px' }}
               value={draft}
               onChange={(e) => setDraft(Number(e.target.value) || 0)}
             />

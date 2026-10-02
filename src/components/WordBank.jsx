@@ -259,18 +259,18 @@ export default function WordBank() {
         </div>
       </div>
 
-      <div className="card wordlist-card" style={{ paddingTop: 20, paddingRight: 0, paddingBottom: 0 }}>
+      <div className="card wordlist-card" style={{ paddingTop: 20, paddingRight: 20, paddingBottom: 20 }}>
         <table>
           <thead>
             <tr style={{ fontSize: 15, fontWeight: 700 }}>
-              <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
+              <th className="sortable nowrap-col" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
               <th>Meaning</th>
               <th>Relatives</th>
               <th>Topics</th>
-              <th>Tag</th>
-              <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
-              <th className="sortable" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
-              <th>Actions</th>
+              <th className="nowrap-col">Tag</th>
+              <th className="sortable nowrap-col" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
+              <th className="sortable nowrap-col" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
+              <th className="nowrap-col">Actions</th>
             </tr>
           </thead>
           <tbody>
