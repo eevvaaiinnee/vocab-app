@@ -260,17 +260,28 @@ export default function WordBank() {
       </div>
 
       <div className="card wordlist-card" style={{ paddingTop: 20, paddingRight: 20, paddingBottom: 20 }}>
-        <table>
+        <div className="vocab-table-scroll">
+        <table className="vocab-table">
+          <colgroup>
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '14%' }} />
+            <col style={{ width: '12%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '14%' }} />
+          </colgroup>
           <thead>
-            <tr style={{ fontSize: 15, fontWeight: 700 }}>
-              <th className="sortable nowrap-col" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
+            <tr style={{ fontSize: 14, fontWeight: 700 }}>
+              <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
               <th>Meaning</th>
               <th>Relatives</th>
               <th>Topics</th>
-              <th className="nowrap-col">Tag</th>
-              <th className="sortable nowrap-col" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
-              <th className="sortable nowrap-col" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
-              <th className="nowrap-col">Actions</th>
+              <th>Tag</th>
+              <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
+              <th className="sortable" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
+              <th>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -288,7 +299,7 @@ export default function WordBank() {
                     })}
                   </td>
                   <td><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>
-                  <td>{w.added_date}</td>
+                  <td style={{ whiteSpace: 'nowrap' }}>{w.added_date}</td>
                   <td>{w.exposure_count}</td>
                   <td>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: 4, width: 'fit-content' }}>
@@ -309,6 +320,7 @@ export default function WordBank() {
             })}
           </tbody>
         </table>
+        </div>
       </div>
 
       {editWord && (

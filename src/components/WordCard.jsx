@@ -23,6 +23,12 @@ export default function WordCard({ word, sentences, onToggleFavorite, onMarkMast
       })}
       <div className="word-term">{word.term}</div>
       <div className="word-meaning">{word.chinese_meaning}</div>
+      {word.relatives && (
+        <div className="word-relatives">
+          <span className="word-relatives-label">Relatives</span>
+          {word.relatives}
+        </div>
+      )}
       <ol className="sentence-list">
         {sentences.map((s) => (
           <li key={s.id}>{s.sentence}</li>
