@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabaseClient';
 import { getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
 import { useAuth, requireAuth } from '../lib/AuthContext';
+import { formatShortDate } from '../lib/dateUtils';
 
 const TAG_CLASS = {
   Stranger: 'tag-stranger',
@@ -262,26 +263,16 @@ export default function WordBank() {
       <div className="card wordlist-card" style={{ paddingTop: 20, paddingRight: 20, paddingBottom: 20 }}>
         <div className="vocab-table-scroll">
         <table className="vocab-table">
-          <colgroup>
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '14%' }} />
-            <col style={{ width: '12%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '10%' }} />
-            <col style={{ width: '14%' }} />
-          </colgroup>
           <thead>
             <tr style={{ fontSize: 14, fontWeight: 700 }}>
               <th className="sortable" onClick={() => toggleSort('term')}>Word <span className="arrow">{arrow('term')}</span></th>
               <th>Meaning</th>
               <th>Relatives</th>
               <th>Topics</th>
-              <th>Tag</th>
-              <th className="sortable" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
-              <th className="sortable" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
-              <th>Actions</th>
+              <th className="col-tight">Tag</th>
+              <th className="sortable col-tight" onClick={() => toggleSort('added_date')}>Added <span className="arrow">{arrow('added_date')}</span></th>
+              <th className="sortable col-tight col-center" onClick={() => toggleSort('exposure_count')}>Exposure <span className="arrow">{arrow('exposure_count')}</span></th>
+              <th className="col-tight">Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -295,13 +286,13 @@ export default function WordBank() {
                   <td>
                     {(w.topics || []).map((t) => {
                       const c = topicColor(t);
-                      return <span key={t} className="topic-pill" style={{ background: c.bg, color: c.text, marginBottom: 3 }}>{t}</span>;
+                      return <span key={t} className="topic-pill" style={{ background: c.bg, color: c.text }}>{t}</span>;
                     })}
                   </td>
-                  <td><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>
-                  <td style={{ whiteSpace: 'nowrap' }}>{w.added_date}</td>
-                  <td>{w.exposure_count}</td>
-                  <td>
+                  <td className="col-tight"><span className={`tag ${TAG_CLASS[tag]}`}>{tag}</span></td>
+                  <td className="col-tight" title={w.added_date}>{formatShortDate(w.added_date)}</td>
+                  <td className="col-tight col-center">{w.exposure_count}</td>
+                  <td className="col-tight">
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, auto)', gap: 4, width: 'fit-content' }}>
                       <button className={`btn icon ${w.status === 'mastered' ? 'active' : ''}`}
                         onClick={() => toggleMastered(w)} title={w.status === 'mastered' ? 'Unmark Friend' : 'Mark as Friend'}>🤝</button>

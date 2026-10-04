@@ -31,3 +31,10 @@ export function localDateStr(date = new Date()) {
 export function ymdStr(year, month, day) {
   return `${year}-${pad(month + 1)}-${pad(day)}`;
 }
+
+// "2026-10-04" -> "10/04/26"（纯字符串转换，不经过任何时区换算）
+export function formatShortDate(ymd) {
+  if (!ymd) return '';
+  const [y, m, d] = ymd.split('-');
+  return `${m}/${d}/${y.slice(2)}`;
+}

@@ -331,10 +331,16 @@ th { color: var(--ink-soft); font-weight: 600; }
 th.sortable { cursor: pointer; user-select: none; }
 th.sortable:hover { color: var(--primary); }
 th.sortable .arrow { font-size: 10px; margin-left: 3px; opacity: 0.6; }
+/* 词库表格：列宽按内容自动分配，单词/标签永不拆开；只有窗口窄到装不下时才会出现滚动条（兜底） */
 .vocab-table-scroll { overflow-x: auto; }
-table.vocab-table { table-layout: fixed; min-width: 960px; }
-table.vocab-table td, table.vocab-table th { overflow-wrap: anywhere; vertical-align: middle; }
-table.vocab-table .word-highlight { max-width: 100%; overflow-wrap: anywhere; }
+table.vocab-table { width: 100%; }
+table.vocab-table th, table.vocab-table td { padding: 6px; vertical-align: middle; }
+table.vocab-table th.col-tight, table.vocab-table td.col-tight { width: 1%; white-space: nowrap; }
+table.vocab-table th.col-center, table.vocab-table td.col-center { text-align: center; }
+table.vocab-table .word-highlight { padding: 7px 12px; }
+table.vocab-table .topic-pill { margin: 0 4px 4px 0; }
+table.vocab-table button.btn.icon { padding: 4px 6px; }
+.tag, .topic-pill { white-space: nowrap; }
 
 .hint { font-size: 12px; color: var(--ink-soft); }
 .word-highlight {
