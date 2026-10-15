@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { fetchAll } from '../lib/fetchAll';
 import { supabase } from '../lib/supabaseClient';
 import { getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { topicColor } from '../lib/colors';
@@ -34,7 +35,7 @@ export default function WordBank() {
   useEffect(() => { load(); }, []);
 
   async function load() {
-    const { data: w } = await supabase.from('words').select('*');
+    const w = await fetchAll('words');
     const { data: t } = await supabase.from('topics').select('*').order('name');
     setWords(w || []);
     setTopicRows(t || []);

@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
+import { fetchAll } from '../lib/fetchAll';
 import { supabase } from '../lib/supabaseClient';
 import { demoteAfterQuizFail, computeNextDue, getTag, isOneNoodle, isAcquaintance, toggleOneNoodleExposure, toggleAcquaintanceExposure } from '../lib/scheduler';
 import { localDateStr } from '../lib/dateUtils';
@@ -20,15 +21,14 @@ export default function Quiz() {
   useEffect(() => { loadHistory(); }, []);
 
   async function loadHistory() {
-    const { data: words } = await supabase.from('words').select('id, term');
+    const words = await fetchAll('words', 'id, term');
     setAllWords(words || []);
     const { data } = await supabase.from('quiz_log').select('*').order('date', { ascending: false }).limit(60);
     setHistory(data || []);
   }
 
   async function startQuiz() {
-    const { data } = await supabase.from('words').select('*');
-    const all = data || [];
+    const all = await fetchAll('words');
     const friendPool = all.filter((w) => w.status === 'mastered').sort(() => Math.random() - 0.5);
     // "其他"词池：至少到过 OneNoodle 阶段（有过几次曝光），排除纯新词
     const otherPool = all.filter((w) => w.status !== 'mastered' && w.exposure_count >= 4).sort(() => Math.random() - 0.5);

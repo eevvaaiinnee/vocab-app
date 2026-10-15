@@ -5,6 +5,7 @@ import { topicColor } from '../lib/colors';
 import { localDateStr } from '../lib/dateUtils';
 import { useAuth, requireAuth } from '../lib/AuthContext';
 import WordCard from './WordCard';
+import { fetchAll } from '../lib/fetchAll';
 
 const todayStr = () => localDateStr();
 
@@ -26,16 +27,9 @@ export default function DailyPractice() {
   useEffect(() => { init(); }, []);
 
   async function init() {
-    const { data: words } = await supabase.from('words').select('*');
-    const { data: sents } = await supabase.from('sentences').select('*').order('order_index');
+    const words = await fetchAll('words');
     const { data: topicRows } = await supabase.from('topics').select('*').order('name');
     setAllWords(words || []);
-    const grouped = {};
-    (sents || []).forEach((s) => {
-      grouped[s.word_id] = grouped[s.word_id] || [];
-      grouped[s.word_id].push(s);
-    });
-    setSentencesByWord(grouped);
     setTopics((topicRows || []).map((t) => t.name));
 
     const { data: session } = await supabase.from('daily_sessions').select('*').eq('date', todayStr()).maybeSingle();
@@ -43,7 +37,19 @@ export default function DailyPractice() {
       const ids = new Set(session.word_ids);
       setPool((words || []).filter((w) => ids.has(w.id)));
       setSessionExists(true);
+      await loadSentences(session.word_ids);
     }
+  }
+
+  async function loadSentences(ids) {
+    if (!ids || !ids.length) { setSentencesByWord({}); return; }
+    const sents = await fetchAll('sentences', '*', (q) => q.in('word_id', ids));
+    const grouped = {};
+    sents.sort((a, b) => a.order_index - b.order_index).forEach((s) => {
+      grouped[s.word_id] = grouped[s.word_id] || [];
+      grouped[s.word_id].push(s);
+    });
+    setSentencesByWord(grouped);
   }
 
   function toggleTopic(t) {
