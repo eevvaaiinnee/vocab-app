@@ -1,18 +1,21 @@
-// Supabase/PostgREST returns at most 1000 rows per request. Page through the table.
+// Supabase/PostgREST caps rows per request (default 1000, and the project may set it lower).
+// Page through the table using the real page length and the exact total count.
 import { supabase } from './supabaseClient';
 
 export async function fetchAll(table, columns = '*', build = (q) => q) {
-  const size = 1000;
-  let from = 0;
   const out = [];
-  for (;;) {
-    const { data, error } = await build(supabase.from(table).select(columns))
+  let total = null;
+  for (let guard = 0; guard < 500; guard++) {
+    const from = out.length;
+    const { data, error, count } = await build(
+      supabase.from(table).select(columns, { count: 'exact' })
+    )
       .order('id')
-      .range(from, from + size - 1);
-    if (error || !data) break;
+      .range(from, from + 999);
+    if (error || !data || data.length === 0) break;
+    if (total === null && typeof count === 'number') total = count;
     out.push(...data);
-    if (data.length < size) break;
-    from += size;
+    if (total !== null ? out.length >= total : data.length < 1000) break;
   }
   return out;
 }
